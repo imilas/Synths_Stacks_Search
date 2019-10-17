@@ -22,8 +22,12 @@ def specShow(sig):
         sig=sig.frames
     except:
         pass
-    sig=lib.to_mono(np.transpose(sig)) 
-#     sig=lib.to_mono(sig) 
+    print(sig)
+    sig=np.nan_to_num(list(sig))
+    try:
+        sig=lib.to_mono(np.transpose(sig))
+    except:
+        return
     X = lib.stft(sig)
     Xdb = lib.amplitude_to_db(abs(X))
     plt.figure(figsize=(14, 5))

@@ -1,2 +1,5 @@
 pippi-git
 *.wav
+synthpy
+.ipynb
+.vscode

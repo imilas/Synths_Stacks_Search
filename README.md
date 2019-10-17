@@ -1,1 +1,2 @@
-# synthgen
+install requirements
+check notebooks
