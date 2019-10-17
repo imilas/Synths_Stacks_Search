@@ -1,38 +1,69 @@
 import random
 import json
 import sounddevice as sd
-import librosa as lib
-import librosa.display
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd 
 from pippi import dsp, noise
-import scipy
+from pippi.soundbuffer import SoundBuffer
+from helpers import *
 
 sr=44100
-numFR=50
-numCut=50
-oscTypes=["sine","square","saw","noise"]
-a_d_s_r=np.arange(0,4)
-numOscPitches=np.arange(1,4)
-pitchFreq=np.geomspace(30,15000,numFR)
-amplitude=np.linspace(0,1,10)
+freqSpacing=50
+cutSpacing=50
+lengthSpacing=10
+startSpacing=10
 
-class SynthParams():
+#list of random params we choosing from
+oscTypes=["sine","square","saw"]
+a_d_s_r=np.arange(0,4)
+numOscPitches=np.arange(1,10)
+pitchFreq=np.geomspace(30,15000,freqSpacing)
+# pitchFreq=np.linspace(30,15000,freqSpacing)
+amplitude=[0.3,0.5,0.8,1]
+filterOrders=[2,8,16]
+lengths=np.linspace(0.2,0.8,startSpacing)**0.5
+
+class RandomParams():
     def __init__(self,name="pset"):
-        self.oscTypes=np.random.choice(oscTypes,p=[0.3,0.2,0.1,0.4])
+        self.oscType=np.random.choice(oscTypes,p=[0.5,0.25,0.25])
+        self.isNoise=np.random.choice([1,0],p=[0.3,0.7])
         self.A=np.random.choice(a_d_s_r)
         self.D=np.random.choice(a_d_s_r)
         self.S=np.random.choice(a_d_s_r)
         self.R=np.random.choice(a_d_s_r)
         self.numOscPitches=np.random.choice(numOscPitches)
-        self.pitchFreq=np.random.choice(pitchFreq)
+        self.pitches=self.pitchSelection(self.numOscPitches)
         self.amplitude=np.random.choice(amplitude)
-        self.bpCuts=bpCut()
+        self.bpCuts=self.bpCut()
+        self.bpOrder=np.random.choice(filterOrders,p=[0.25,0.25,0.5])
+        self.length=np.random.choice(lengths)
+        self.start=np.random.choice(np.linspace(0,(1-self.length),startSpacing))
 
-    def bpCut():
-        filterCutoffs=np.geomspace(30,15000,numCut)
-        cutIndex=np.arange(0,numCut)
+    def pitchSelection(self,n=1):
+        return [np.random.choice(pitchFreq) for i in range(n)]
+
+    def bpCut(self):
+        filterCutoffs=np.geomspace(30,15000,cutSpacing)
+        cutIndex=np.arange(0,cutSpacing)
         highIndex=np.random.choice(cutIndex)
-        lowIndex=np.random.choice(cutIndex[highIndex:])
+        lowIndex=np.random.choice(cutIndex[int(highIndex):])
         return filterCutoffs[[highIndex,lowIndex]]
+
+class Synth():
+    def __init__(self,params):
+        buff=SoundBuffer(channels=1)
+        length=1
+        if params.isNoise==1:
+            buff = noise.bln(str(params.oscType),params.length,30,
+                150000,channels=1) 
+        else:
+            buff = Osc(str(params.oscType), 
+                freq=params.pitches,channels=1).play(params.length) 
+
+        buff=buff.adsr(a=params.A, d=params.D, s=params.S, r=params.R)
+        buff.frames = butter_bandpass_filter(buff.frames,params.bpCuts[0],params.bpCuts[1], 
+                                                sr, order=params.bpOrder)
+        self.buff=buff
+    
+
+
