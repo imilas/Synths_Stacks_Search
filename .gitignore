@@ -4,3 +4,4 @@ synthpy
 .ipynb*
 .vscode/
 __pycache__/
+generations/*
