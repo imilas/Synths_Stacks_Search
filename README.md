@@ -1,2 +1,2 @@
 - install requirements
-- check notebooks
+- check randome_generation notebook
