@@ -1,5 +1,6 @@
 pippi-git
 *.wav
 synthpy
-.ipynb
-.vscode
+.ipynb*
+.vscode/
+__pycache__/
