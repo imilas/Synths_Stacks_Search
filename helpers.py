@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 from pippi import dsp, noise
 import scipy
+import param_generation as pg
+
 sr=44100
 
 def specShow(sig):
@@ -93,3 +95,11 @@ def paramToDF(params):
     
     df=pd.concat(pdfs,axis=1)
     return df
+
+def paramToSound(params):
+    out = dsp.buffer(length=1,channels=1)
+    for p in params:
+        s=pg.Synth(p)
+        out.dub(s.buff,p.start)
+    return fx.norm(out,1)    
+    

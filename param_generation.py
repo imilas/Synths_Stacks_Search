@@ -3,6 +3,7 @@ import json
 import sounddevice as sd
 import numpy as np
 import pandas as pd 
+from pippi.oscs import Osc
 from pippi import dsp, noise
 from pippi.soundbuffer import SoundBuffer
 from helpers import *
