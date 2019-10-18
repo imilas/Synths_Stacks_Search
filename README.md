@@ -1,2 +1,2 @@
-install requirements
-check notebooks
+- install requirements
+- check notebooks

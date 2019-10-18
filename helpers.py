@@ -1,28 +1,21 @@
-from pippi.oscs import Osc, Osc2d, Pulsar, Pulsar2d, Alias, Bar
-from pippi import dsp, interpolation, wavetables, fx, oscs,soundpipe
-from pippi.soundbuffer import SoundBuffer
-from pippi.wavesets import Waveset
-from pippi import dsp, fx
 import random
-import sounddevice as sd
-from IPython.display import Audio
 import librosa as lib
 import librosa.display
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from pippi import dsp, noise
 import scipy
 sr=44100
-plt.figure(figsize=(8, 5))
 
 def specShow(sig):
+    plt.figure(figsize=(8, 5))
     # multiframe spectrogram
     #make mono
     try:
         sig=sig.frames
     except:
         pass
-    print(sig)
     sig=np.nan_to_num(list(sig))
     try:
         sig=lib.to_mono(np.transpose(sig))
@@ -33,15 +26,14 @@ def specShow(sig):
     plt.figure(figsize=(14, 5))
     plt.subplot(1, 2, 1)
     lib.display.specshow(Xdb, sr=sr, x_axis='time', y_axis='hz')
+
     # single frame spectrogram
-    # make mono
     X = scipy.fft(sig)
     X_mag = librosa.core.amplitude_to_db(np.absolute(X))
     f = np.linspace(0, sr, len(X_mag)) # frequency variable
     plt.subplot(1, 2, 2)
     res=int(len(sig)/2)
     plt.plot(f[:res], X_mag[:res])
-#     plt.plot(f, X_mag)
     plt.xlabel('Frequency (Hz)')
 def waveShow(sig):
     try:
@@ -87,3 +79,17 @@ def butter_bandpass_filter(sig, lowcut, highcut, fs, order=5):
         sos = butter_bandpass(lowcut, highcut, fs, order=order)
         y = sosfilt(sos, sig)
         return np.reshape(y,(-1,1))
+
+def paramToDF(params):
+    pdfs=[]
+    for j,p in enumerate(params):
+        dict=p.__dict__.copy()  
+        #break up the pitch list
+        for i,v in enumerate(dict["pitches"]):
+            dict["pitch%d"%i]=v
+        del dict["pitches"]
+        ##conversion to df
+        pdfs.append(pd.DataFrame.from_dict([dict]).add_suffix("_%d"%j))
+    
+    df=pd.concat(pdfs,axis=1)
+    return df
