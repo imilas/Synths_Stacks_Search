@@ -7,6 +7,7 @@ from pippi.oscs import Osc
 from pippi import dsp, noise
 from pippi.soundbuffer import SoundBuffer
 from helpers import *
+import helpers
 
 sr=44100
 freqSpacing=50
@@ -71,8 +72,8 @@ class Synth():
                 freq=params.pitches,channels=1).play(params.length) 
 
         buff=buff.adsr(a=params.A, d=params.D, s=params.S, r=params.R)
-        buff.frames = butter_bandpass_filter(buff.frames,params.bpCutLow,params.bpCutHigh, 
-                                                sr, order=params.bpOrder)
+        buff.frames = helpers.butter_bandpass_filter(buff.frames,params.bpCutLow,params.bpCutHigh, 
+                                                     sr, order=params.bpOrder)
         self.buff=buff
 
 # out = dsp.buffer(length=1)
