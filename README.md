@@ -11,4 +11,4 @@
   ~~~~
   sh install.sh
   ~~~~
-- Once installed, check randome_generation notebook for a start
+- Once installed, check random_gen.ipynb for a start
