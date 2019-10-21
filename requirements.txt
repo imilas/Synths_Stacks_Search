@@ -32,8 +32,6 @@ pathtools==0.1.2
 pexpect==4.7.0
 pickleshare==0.7.5
 Pillow==6.0.0
--e git+https://github.com/luvsound/pippi.git@48d9818ca828731adad24d37146e50cf748d99c4#egg=pippi
-pkg-resources==0.0.0
 proglog==0.1.9
 prompt-toolkit==2.0.9
 ptyprocess==0.6.0
