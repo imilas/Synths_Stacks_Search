@@ -6,7 +6,7 @@ import pandas
 import numpy
 import os
 import random
-n_neighbors = 50
+n_neighbors = 10
 data = pandas.read_csv("3_stack.csv",header=None)
 # print(data.head())
 # X = data.iloc[:,44:].as_matrix()
@@ -15,10 +15,10 @@ X = data.iloc[:,1:88].as_matrix()
 X = numpy.nan_to_num(X)
 # print(X)
 time_start = time.time()
-tsne = TSNE(n_components=2, random_state=0, perplexity=100, verbose=1)
+# tsne = TSNE(n_components=2, random_state=0, perplexity=100, verbose=1)
 # tsne = Isomap(n_neighbors, n_components=2)
 # tsne = LocallyLinearEmbedding(n_neighbors,n_components=2)
-# tsne = SpectralEmbedding(n_neighbors=n_neighbors,n_components=2,random_state=0)
+tsne = SpectralEmbedding(n_neighbors=n_neighbors,n_components=2,random_state=0)
 print("# Fitting tsne")
 X_2d = tsne.fit_transform(X)
 print("# Plotting")
