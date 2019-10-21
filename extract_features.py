@@ -4,6 +4,7 @@ import librosa
 import os, tempfile, warnings
 import numpy as np
 import argparse
+import warnings
 
 def add_feature(mfcc1, rmsa1):
     tmfcc1 = np.zeros((mfcc1.shape[0],mfcc1.shape[1]+rmsa1.shape[0]))
@@ -83,6 +84,9 @@ if __name__ == "__main__":
     sounds = args.sounds
     sounds.sort()
     for sound in sounds:
-        row = mean_features(extract_features_from_file(sound))
-        print(",".join(['"'+sound+'"', ",".join([str(x) for x in row])]))
+        try:
+           row = mean_features(extract_features_from_file(sound))
+           print(",".join(['"'+sound+'"', ",".join([str(x) for x in row])]))
+        except Exception as e:
+           warnings.warn(str(e))
     # test_driver()
