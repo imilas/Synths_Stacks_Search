@@ -5,6 +5,7 @@ import os, tempfile, warnings
 import numpy as np
 import argparse
 import warnings
+from multiprocessing import Pool
 
 def add_feature(mfcc1, rmsa1):
     tmfcc1 = np.zeros((mfcc1.shape[0],mfcc1.shape[1]+rmsa1.shape[0]))
@@ -24,6 +25,7 @@ def std_mfcc(mfcc):
 
 def extract_features_from_file(filename):
     audio = wavfile.read(filename, mmap=True)[1] / (2.0 ** 15)
+    audio=audio[0:44100]
     return extract_features(audio,fs=44100)
 
 def extract_features(buffer,fs=44100):
@@ -75,18 +77,20 @@ def test_driver():
 def parse_args():
     parser = argparse.ArgumentParser(description='Process some sounds.')
     parser.add_argument('sounds', metavar='N', type=str, nargs='+',
-                    help='Sounds to load')
+                    help='path to Sounds to load')
     args = parser.parse_args()
     return args
-
+def makeCSV(sound):
+    try:
+        row = mean_features(extract_features_from_file(sound))
+        print(",".join(['"'+sound+'"', ",".join([str(x) for x in row])]))
+    except Exception as e:
+        warnings.warn(str(e))
+    
 if __name__ == "__main__":
     args = parse_args()
     sounds = args.sounds
     sounds.sort()
-    for sound in sounds:
-        try:
-           row = mean_features(extract_features_from_file(sound))
-           print(",".join(['"'+sound+'"', ",".join([str(x) for x in row])]))
-        except Exception as e:
-           warnings.warn(str(e))
+    pool = Pool()                         # Create a multiprocessing Pool
+    pool.map(makeCSV,sounds)  
     # test_driver()
