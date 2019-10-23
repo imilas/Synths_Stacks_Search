@@ -7,7 +7,8 @@ import numpy
 import os
 import random
 n_neighbors = 10
-data = pandas.read_csv("3_stack.csv",header=None)
+data = pandas.read_csv("feat.csv",header=None,error_bad_lines=False)
+
 # print(data.head())
 # X = data.iloc[:,44:].as_matrix()
 # X = data.iloc[:,1:88:2].as_matrix()
