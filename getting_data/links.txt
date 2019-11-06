@@ -1,5 +1,0 @@
-http://cdn.mos.musicradar.com/audio/samples/musicradar-breakbeat-125bpm.zip
-http://cdn.mos.musicradar.com/audio/samples/musicradar-breakbeat-130bpm.zip
-http://cdn.mos.musicradar.com/audio/samples/musicradar-electronic-pop-samples.zip
-http://cdn.mos.musicradar.com/audio/samples/musicradar-essential-drumkit-samples.zip
-http://cdn.mos.musicradar.com/audio/samples/Dubstep-kit-05-140bpm.zip

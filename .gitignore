@@ -5,3 +5,4 @@ synthpy
 .vscode/
 __pycache__/
 generations/*
+*.dill
