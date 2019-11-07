@@ -7,7 +7,10 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 import time
 import librosa, librosa.display
+from sklearn import preprocessing
+
 sr=40000
+scaler = preprocessing.MinMaxScaler()
 
 def fitFreq(rows,frameLen=20,hopLen=999,numFrames=100,exponents=4):
     rows.reset_index()
@@ -19,7 +22,7 @@ def fitFreq(rows,frameLen=20,hopLen=999,numFrames=100,exponents=4):
         for frame in fs:
             X=np.absolute(scipy.fft(frame))
             feat+=X
-        return sr*feat/len(rows)
+        return scaler.fit_transform(feat.reshape(-1,1))
     sample_features=[]
     for i,s in rows.iterrows():
         features=getFreqFeat(s["audio"])
