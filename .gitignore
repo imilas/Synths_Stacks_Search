@@ -5,3 +5,6 @@ synthpy
 .vscode/
 __pycache__/
 generations/*
+*.dill
+feature_extraction/cifardata/
+feature_extraction/CNN_Data/

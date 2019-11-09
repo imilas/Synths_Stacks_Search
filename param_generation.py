@@ -75,16 +75,3 @@ class Synth():
         buff.frames = helpers.butter_bandpass_filter(buff.frames,params.bpCutLow,params.bpCutHigh, 
                                                      sr, order=params.bpOrder)
         self.buff=buff
-
-# out = dsp.buffer(length=1)
-# for i in range(1): 
-#     p=RandomParams()
-#     print(p.__dict__)
-#     # s=Synth(p)
-#     out.dub(s.buff,p.start)
-#     out=fx.norm(out,1)
-
-    
-# sd.play(out)
-# specShow(out)
-# print(p.pitches)
