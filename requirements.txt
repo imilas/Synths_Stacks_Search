@@ -31,7 +31,7 @@ parso==0.5.1
 pathtools==0.1.2
 pexpect==4.7.0
 pickleshare==0.7.5
-Pillow==6.0.0
+Pillow==6.2.0
 proglog==0.1.9
 prompt-toolkit==2.0.9
 ptyprocess==0.6.0
