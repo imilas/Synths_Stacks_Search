@@ -51,7 +51,7 @@ parso==0.5.1
 pathtools==0.1.2
 pexpect==4.7.0
 pickleshare==0.7.5
-Pillow==6.0.0
+Pillow==6.2.0
 -e git+https://github.com/luvsound/pippi.git@b93753cfa232b5a611edd308ce78322d17042928#egg=pippi
 pkg-resources==0.0.0
 proglog==0.1.9
