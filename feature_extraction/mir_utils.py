@@ -12,15 +12,14 @@ from sklearn.manifold import TSNE
 import time
 import os
 import librosa, librosa.display
-
 from multiprocessing import Pool
-
+sr=41000
 
 #load a sample, if given path, load it,
 #if no path but given type, randomly pick one of the type
 #else randomly pick type and load one of the type
 samples="dk_data"
-def loadSample(path="",soundType="",sr=40000):
+def loadSample(path="",soundType="",sr=41000):
         if path:
                 file=path
                 y, sr = librosa.load(path,sr)
@@ -160,9 +159,15 @@ def plotTSNE(df,perp=2,fsize=(5,8)):
 
 def playSample(sample,sr=40000):
     sd.play(sample,sr,blocking=True)
-
-if __name__=="__main__":
-        # f=loadAudioArrays()
-        df=audioFrames(load=False)
-
-        print(df) 
+# this function makes 128x128 image of a melspec from any audio. 
+# uncertainty: what's the best value for n_fft?
+def audToImage(x,img_dim=128):
+    xt,i=librosa.effects.trim(x, top_db=20)
+    xt=librosa.util.normalize(xt)
+    num_samples=2*img_dim**2-img_dim
+    cut=xt[0:num_samples]
+    cut=np.pad(cut,(0,num_samples-cut.shape[0]),'constant')
+    D=librosa.stft(cut,n_fft=int((img_dim*4*2)),hop_length=img_dim*2)
+    S = librosa.feature.melspectrogram(S=D, sr=sr, n_mels=img_dim)
+    S_dB = librosa.power_to_db(np.abs(S)**2)
+    return S_dB

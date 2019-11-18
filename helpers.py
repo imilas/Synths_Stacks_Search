@@ -4,7 +4,7 @@ import librosa.display
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from pippi import dsp, noise
+from pippi import dsp, fx
 import scipy
 import param_generation as pg
 
@@ -101,5 +101,20 @@ def paramToSound(params):
     for p in params:
         s=pg.Synth(p)
         out.dub(s.buff,p.start)
-    return fx.norm(out,1)    
-    
+    return fx.norm(out,1)
+
+def stackMaker(n,l=1,c=1):
+    #makes a sample of length l with num channels c
+    out = dsp.buffer(length=l,channels=c)
+    params=[]
+    for i in range(n): 
+        p=pg.RandomParams()
+        s=pg.Synth(p)
+        out.dub(s.buff,p.start)
+        params.append(p)
+    out=fx.norm(out,1)
+    return out,params
+
+#convert pippi outputs to mono audio
+def memToAud(out):
+    return np.squeeze(np.asarray(out.frames))
