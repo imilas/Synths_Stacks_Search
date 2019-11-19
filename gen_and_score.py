@@ -19,6 +19,7 @@ import torch.utils.data as utils
 import torchvision.transforms as transforms
 from PIL import Image
 ###
+import scipy.stats as ss
 
 sr=44100
 stack_size=3
@@ -26,6 +27,7 @@ BATCH_SIZE=1
 classes=['clap', 'guitar',
          'hat', 'kick', 'noise',
          'piano', 'rim', 'shake', 'snare', 'synth','tom', 'voc']
+classes_ranked=[c+"_rank" for c in classes]
 cDict={v:i for i,v in enumerate(classes)}
 
 #setup CNN
@@ -33,11 +35,10 @@ cDict={v:i for i,v in enumerate(classes)}
 device="cpu"
 s=torch.load("feature_extraction/models/model-4-18.states")
 cnn = CNN_utils.CNN_net()
-cnn.load_state_dict(s["model_state_dict"])
 cnn.to(device)
+cnn.load_state_dict(s["model_state_dict"])
 
-def makeRows():
-
+for i in range(50000):
     ## function that makes a row of parameters and the scores for the parameters 
     ## this row can then be added to a dataframe/csv file etc
     out,params=hp.stackMaker(1)
@@ -48,7 +49,7 @@ def makeRows():
     try:
         im=mu.audToImage(a,128)
     except:
-        return "fail"
+        continue
     z=librosa.util.normalize(im)
     t= transforms.Compose(
         [
@@ -68,14 +69,18 @@ def makeRows():
     o=outputs.cpu().detach().numpy()[0]
     o_norm=o-min(o)
     o_norm=o_norm/sum(o_norm)
-    rowDict=dict(zip(classes,o_norm))
-    
-    df=pd.concat([pd.DataFrame.from_dict([rowDict]),hp.paramToDF(params)],axis=1)    
+    score_dict=dict(zip(classes,o_norm))
+    #ranks based on score
+    ranks=1+len(classes_ranked)-ss.rankdata(o_norm) 
+    rank_dict=dict(zip(classes_ranked,ranks))
+    df=pd.concat([pd.DataFrame.from_dict([rank_dict]),pd.DataFrame.from_dict([score_dict]),hp.paramToDF(params)],axis=1)    
     x=df.to_string(header=False,
                   index=False,
                   index_names=False).split('\n')
     vals = [','.join(ele.split()) for ele in x]
-    return vals
+    
+#     print(vals[0])
+    with open ("test.txt","a") as t:
+        t.write(vals[0]+"\n")
 
-while (1):
-    print(makeRows())
+

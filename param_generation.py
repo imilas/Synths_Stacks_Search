@@ -40,7 +40,7 @@ class RandomParams():
         self.initPitch=np.random.choice(possibleInitPitches)
         self.pitchPathMag=np.random.choice([-1,0,1])
         self.pitchPathAccel=np.random.choice([0,2,8])
-        self.pitches=self.pitchSelection(self.numOscPitches)
+#         self.pitches=self.pitchSelection(self.numOscPitches)
         #######
         self.amplitude=np.random.choice(amplitude)
         self.bpCutLow,self.bpCutHigh=self.bpCut()
@@ -69,9 +69,39 @@ class Synth():
                 150000,channels=1) 
         else:
             buff = Osc(str(params.oscType), 
-                freq=params.pitches,channels=1).play(params.length) 
+                freq=params.pitchSelection(),channels=1).play(params.length) 
 
         buff=buff.adsr(a=params.A, d=params.D, s=params.S, r=params.R)
         buff.frames = helpers.butter_bandpass_filter(buff.frames,params.bpCutLow,params.bpCutHigh, 
                                                      sr, order=params.bpOrder)
         self.buff=buff
+        
+def ensemble(params):
+    out = dsp.buffer(length=1,channels=1)
+    for p in params:
+        s=pg.Synth(p)
+        out.dub(s.buff,p.start)
+    return out
+
+#takesa  row of our scored database and returns a parameter set
+def rToParams(r,pset,n=0):
+
+    pset.oscType=r["oscType_%d"%(n,)]
+    pset.isNoise=r["isNoise_%d"%(n,)]
+    pset.A=r["A_%d"%(n,)]
+    pset.D=r["D_%d"%(n,)]
+    pset.S=r["S_%d"%(n,)]
+    pset.R=r["R_%d"%(n,)]
+    #pitches
+    pset.numOscPitches=r["numOscPitches_%d"%(n,)]
+    pset.initPitch=r["initPitch_%d"%(n,)]
+    pset.pitchPathMag=r["pitchPathMag_%d"%(n,)]
+    pset.pitchPathAccel=r["pitchPathAccel_%d"%(n,)]
+    #######
+    pset.amplitude=r["amplitude_%d"%(n,)]
+    pset.bpCutLow,pset.bpCutHigh=r["bpCutLow_%d"%(n,)],r["bpCutHigh_%d"%(n,)]
+    pset.bpOrder=r["bpOrder_%d"%(n,)]
+    pset.length=r["length_%d"%(n,)]
+    pset.start=r["start_%d"%(n,)]
+    pset.pitches=[]
+    return pset
