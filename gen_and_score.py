@@ -80,7 +80,7 @@ for i in range(50000):
     vals = [','.join(ele.split()) for ele in x]
     
 #     print(vals[0])
-    with open ("test3.txt","a") as t:
+    with open ("csvs/test3.txt","a") as t:
         t.write(vals[0]+"\n")
 
 
