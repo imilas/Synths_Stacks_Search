@@ -4,7 +4,7 @@
     ~~~~
     sudo apt-get install python3-dev
    ~~~~~
-- notebooks are tested in jupyterlab (extension for jupyter-notebook)
+- notebooks are best run in jupyterlab
 - need gcc4.9+ (tested on gcc7) to install pippi
 - need nodejs5+ for some jupyterlab widgets
 - since gcc and nodejs are required for parts of this project, a miniconda environment is ideal https://docs.conda.io/en/latest/miniconda.html
@@ -13,9 +13,9 @@
     conda install -c conda-forge nodejs
     conda install -c creditx gcc-7
     ~~~~  
-### installation
-- Install pippi and other requirements:
+### Installation
+- install pippi and other requirements:
     ~~~~
     sh install.sh
     ~~~~
-- Once installed, check random_gen.ipynb for a start
+- once installed, check random_gen.ipynb for a start
