@@ -87,9 +87,9 @@ def paramToDF(params):
     for j,p in enumerate(params):
         dict=p.__dict__.copy()  
         #break up the pitch list
-        for i,v in enumerate(dict["pitches"]):
+        for i,v in enumerate([-1,-1,-1,-1]): #back when we had pitches, 
             dict["pitch%d"%i]=v
-        del dict["pitches"]
+#         del dict["pitches"]
         ##conversion to df
         pdfs.append(pd.DataFrame.from_dict([dict]).add_suffix("_%d"%j))
     
