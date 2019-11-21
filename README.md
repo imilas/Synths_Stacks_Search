@@ -1,14 +1,21 @@
-### installation
-- Make sure python3-dev tools are installed and use python3.6. If using apt:
+
+### Notes
+- use python3.6 and Make sure python3-dev tools are installed. If using apt:
     ~~~~
     sudo apt-get install python3-dev
    ~~~~~
-- Make a virtualenv, if you'd like:
-  ~~~~
-  virtualenv env -p python3.6 && source env/bin/activate
-  ~~~~
-- Install pippi and other requirements:
-  ~~~~
-  sh install.sh
-  ~~~~
-- Once installed, check random_gen.ipynb for a start
+- notebooks are best run in jupyterlab
+- need gcc4.9+ (tested on gcc7) to install pippi
+- need nodejs5+ for some jupyterlab widgets
+- since gcc and nodejs are required for parts of this project, a miniconda environment is ideal https://docs.conda.io/en/latest/miniconda.html
+- check nodejs --version and gcc --version, then (if needed) update your conda env with:
+    ~~~~
+    conda install -c conda-forge nodejs
+    conda install -c creditx gcc-7
+    ~~~~  
+### Installation
+- install pippi and other requirements:
+    ~~~~
+    sh install.sh
+    ~~~~
+- once installed, check random_gen.ipynb for a start
