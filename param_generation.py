@@ -29,7 +29,7 @@ lengths=np.linspace(0.2,0.8,startSpacing)**0.5
 class RandomParams():
     def __init__(self,name="pset"):
         #####type
-        self.oscType=np.random.choice(oscTypes,p=[0.5,0.25,0.25])
+        self.oscType=np.random.choice([0,1,2],p=[0.5,0.25,0.25])
         self.isNoise=np.random.choice([1,0],p=[0.1,0.9])
         self.A=np.random.choice(a_d_s_r)
         self.D=np.random.choice(a_d_s_r)
@@ -40,13 +40,16 @@ class RandomParams():
         self.initPitch=np.random.choice(possibleInitPitches)
         self.pitchPathMag=np.random.choice([-1,0,1])
         self.pitchPathAccel=np.random.choice([0,2,8])
-#         self.pitches=self.pitchSelection(self.numOscPitches)
         #######
         self.amplitude=np.random.choice(amplitude)
         self.bpCutLow,self.bpCutHigh=self.bpCut()
         self.bpOrder=np.random.choice(filterOrders,p=[0.25,0.25,0.5])
         self.length=np.random.choice(lengths)
         self.start=np.random.choice(np.linspace(0,(1-self.length),startSpacing))
+
+    def getOscType(self):
+        return oscTypes[self.oscType]
+        
 
     def pitchSelection(self,n=1):
         pList=(self.initPitch)+(15000*self.pitchPathMag*(np.linspace(0,1,numOscPitches)**self.pitchPathAccel))
@@ -65,10 +68,10 @@ class Synth():
         buff=SoundBuffer(channels=1)
         length=1
         if params.isNoise==1:
-            buff = noise.bln(str(params.oscType),params.length,30,
+            buff = noise.bln(params.getOscType(),params.length,30,
                 150000,channels=1) 
         else:
-            buff = Osc(str(params.oscType), 
+            buff = Osc(str(params.getOscType()), 
                 freq=params.pitchSelection(),channels=1).play(params.length) 
 
         buff=buff.adsr(a=params.A, d=params.D, s=params.S, r=params.R)
