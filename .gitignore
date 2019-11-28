@@ -9,3 +9,4 @@ generations/*
 feature_extraction/cifardata/
 feature_extraction/CNN_Data/
 *-COPY-*
+csvs/*
