@@ -37,6 +37,7 @@ def specShow(sig):
     res=int(len(sig)/2)
     plt.plot(f[:res], X_mag[:res])
     plt.xlabel('Frequency (Hz)')
+    
 def waveShow(sig):
     try:
         sig=sig.frames
@@ -85,14 +86,8 @@ def butter_bandpass_filter(sig, lowcut, highcut, fs, order=5):
 def paramToDF(params):
     pdfs=[]
     for j,p in enumerate(params):
-        dict=p.__dict__.copy()  
-        #break up the pitch list
-        for i,v in enumerate([-1,-1,-1,-1]): #back when we had pitches, 
-            dict["pitch%d"%i]=v
-#         del dict["pitches"]
-        ##conversion to df
-        pdfs.append(pd.DataFrame.from_dict([dict]).add_suffix("_%d"%j))
-    
+        dict=p.__dict__.copy() 
+        pdfs.append(pd.DataFrame.from_dict([dict]).add_suffix("_%d"%j))    
     df=pd.concat(pdfs,axis=1)
     return df
 
@@ -114,6 +109,51 @@ def stackMaker(n,l=1,c=1):
         params.append(p)
     out=fx.norm(out,1)
     return out,params
+
+#convert params in a df row to a params object
+# def rToParams(r,n=0):
+#     pset=pg.RandomParams()
+#     pset.oscType=int(round(r["oscType_%d"%(n,)]))
+#     pset.isNoise=int(round(r["isNoise_%d"%(n,)]))
+#     pset.A=r["A_%d"%(n,)]
+#     pset.D=r["D_%d"%(n,)]
+#     pset.S=r["S_%d"%(n,)]
+#     pset.R=r["R_%d"%(n,)]
+#     #pitches
+#     pset.pitch_0=r["pitch_0_%d"%(n,)]
+#     pset.pitch_1=r["pitch_1_%d"%(n,)]
+#     pset.pitch_2=r["pitch_2_%d"%(n,)]
+#     pset.pitch_3=r["pitch_3_%d"%(n,)]
+#     #######
+#     pset.amplitude=r["amplitude_%d"%(n,)]
+#     pset.bpCutLow,pset.bpCutHigh=r["bpCutLow_%d"%(n,)],r["bpCutHigh_%d"%(n,)]
+#     pset.bpOrder=int(round(r["bpOrder_%d"%(n,)]))
+#     pset.length=r["length_%d"%(n,)]
+#     pset.start=r["start_%d"%(n,)]
+
+#     return pset
+#convert params ina  row to a sound and play it
+
+def rToParams(r,n=0):
+    pset=pg.RandomParams()
+    pset.oscType=int(round(r["oscType_%d"%(n,)]))
+    pset.isNoise=int(round(r["isNoise_%d"%(n,)]))
+    pset.A=r["A_%d"%(n,)]
+    pset.D=r["D_%d"%(n,)]
+    pset.S=r["S_%d"%(n,)]
+    pset.R=r["R_%d"%(n,)]
+    #pitches
+    pset.pitch_0=r["pitch_0_%d"%(n,)]
+    pset.pitch_1=r["pitch_1_%d"%(n,)]
+    pset.pitch_2=r["pitch_2_%d"%(n,)]
+    pset.pitch_3=r["pitch_3_%d"%(n,)]
+    #######
+    pset.amplitude=r["amplitude_%d"%(n,)]
+    pset.bpCutLow,pset.bpCutHigh=r["bpCutLow_%d"%(n,)],r["bpCutHigh_%d"%(n,)]
+    pset.bpOrder=int(round(r["bpOrder_%d"%(n,)]))
+    pset.length=r["length_%d"%(n,)]
+    pset.start=r["start_%d"%(n,)]
+    return pset
 
 #convert pippi outputs to mono audio
 def memToAud(out):

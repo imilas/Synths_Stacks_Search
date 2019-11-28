@@ -38,18 +38,17 @@ cnn = CNN_utils.CNN_net()
 cnn.to(device)
 cnn.load_state_dict(s["model_state_dict"])
 
-for i in range(50000):
+def rank_score():
     ## function that makes a row of parameters and the scores for the parameters 
     ## this row can then be added to a dataframe/csv file etc
     out,params=hp.stackMaker(1)
     a=hp.memToAud(out)
     
     # get the image for that audio
-    
     try:
         im=mu.audToImage(a,128)
     except:
-        continue
+        return rank_score()
     z=librosa.util.normalize(im)
     t= transforms.Compose(
         [
@@ -79,8 +78,10 @@ for i in range(50000):
                   index_names=False).split('\n')
     vals = [','.join(ele.split()) for ele in x]
     
-#     print(vals[0])
-    with open ("csvs/test3.txt","a") as t:
+    return vals
+
+
+for i in range(50000):
+    vals=rank_score()
+    with open ("csvs/test2.txt","a") as t:
         t.write(vals[0]+"\n")
-
-
