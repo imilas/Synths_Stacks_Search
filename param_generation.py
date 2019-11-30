@@ -12,33 +12,38 @@ import helpers
 C0=440*2**(-1*9/12)*2**(-1*4) #assume A4 is 440hz and based on it calculate our lowest note C0
 sr=44100
 
-cut_spacing=10
-start_spacing=10
- 
-
-#list of random params we choosing from
 osc_types=["sine","square","saw"]
 a_d_s_r=np.arange(0,4)
 
 #define notes based on A4=440, also used for bandpass cutoffs
 num_notes=120
-possible_pitches=np.array([C0*2**(x/12) for x in range(0,num_notes)])
+all_pitches=np.array([C0*2**(x/12) for x in range(0,num_notes)]) #!rename to synth pitches or something
 p0_pitches=np.arange(0,num_notes,2)
 p1_pitches=np.arange(0,num_notes,4)
 p2_pitches=np.arange(0,num_notes,8)
 p3_pitches=np.arange(0,num_notes,16)
 
-num_osc_pitches=np.arange(0,4) #hard set to 4 atm
+# num_cuts=120
+# all_filter_pitches=np.array([C0*2**(x/12) for x in np.arange(0,num_cuts)]) #skipping the first 2 octaves
+bp_pitches=np.arange(0,num_notes,2)
 
-#envelop
+num_osc_pitches=np.arange(0,4) #hard set to 4 for now
+#envelope
 amplitudes=np.array([0.3,0.5,0.8,1])
 filter_orders=np.array([2,8,16])
-starts=np.linspace(0,0.95,start_spacing) #used for both starting points and lengths
+
+squeeze_factor=10 #biasing starts towards 0
+max_start=0.95 #latest start time of a sound, slightly below 1
+min_length=(1-max_start)**((1/squeeze_factor))  #based on max_start, what should be min_length so that it adds up to 1?
+start_spacing=10
+
+starts=np.linspace(0,max_start,start_spacing)**squeeze_factor 
+lengths=np.linspace(0,0.95,start_spacing)**squeeze_factor
 
 class RandomParams():
     def __init__(self,name="pset"):
-        self.oscType=rd.choice([0,1,2])
-        self.isNoise=rd.choice([1,0],p=[0.3,0.7])     
+        self.oscType=rd.choice([0,1,2],p=[0.8,0.1,0.1])
+        self.isNoise=rd.choice([0,1],p=[0.5,0.5])     
         self.A=rd.randint(len(a_d_s_r))
         self.D=rd.randint(len(a_d_s_r))
         self.S=rd.randint(len(a_d_s_r))
@@ -47,25 +52,25 @@ class RandomParams():
         self.pitch_1=rd.choice(p1_pitches)
         self.pitch_2=rd.choice(p2_pitches)
         self.pitch_3=rd.choice(p3_pitches) 
-        self.bpCutLow=rd.randint(len(possible_pitches)-1)#prevent setting low cut to the highest index
-        self.bpCutHigh=rd.randint(self.bpCutLow,len(possible_pitches))
+        self.bpCutLow=rd.choice(bp_pitches)
+        self.bpCutHigh=rd.randint(self.bpCutLow,num_notes)
         self.bpOrder=rd.randint(len(filter_orders))
         self.amplitude=rd.randint(len(amplitudes))
         self.start=rd.randint(start_spacing)
-        self.length=rd.randint(len(starts)-self.start)
+        self.length=rd.randint(start_spacing-self.start)
 
     def getOscType(self):
         return osc_types[self.oscType]
     def getPitches(self):
-        return [self.pitch_0,self.pitch_1,self.pitch_2,self.pitch_3]
+        return all_pitches[self.pitch_0],all_pitches[self.pitch_1],all_pitches[self.pitch_2],all_pitches[self.pitch_3]
     def getBandPass(self):
-        return possible_pitches[self.bpCutLow],possible_pitches[self.bpCutHigh],filter_orders[self.bpOrder]
+        return all_pitches[self.bpCutLow],all_pitches[self.bpCutHigh],filter_orders[self.bpOrder]
     def getAmp(self):
         return amplitudes[self.amplitude]
     def getLength(self):
-        return starts[self.length]+0.05
+        return starts[self.length]+min_length
     def getStart(self):
-        return starts[self.start]
+        return lengths[self.start]
 
 class Synth():
     def __init__(self,params):
@@ -75,7 +80,7 @@ class Synth():
             buff = noise.bln(params.getOscType(),params.getLength(),30,
                 150000,channels=1) 
         else:
-            buff = Osc(str(params.getOscType()), freq=params.getPitches(),
+            buff = Osc(str(params.getOscType()), freq=list(params.getPitches()),
                        channels=1).play(params.getLength()) 
 
         buff=buff.adsr(a=params.A, d=params.D, s=params.S, r=params.R)
