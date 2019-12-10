@@ -20,20 +20,25 @@ import torchvision.transforms as transforms
 from PIL import Image
 ###
 import scipy.stats as ss
+import common_vars as comv
+import imp
+import uuid
+
+dump_file=str(uuid.uuid4())[0:4] #lazy way of generating unique file name
+
+imp.reload(comv)
 
 sr=44100
 stack_size=3
 BATCH_SIZE=1
-classes=['clap', 'guitar',
-         'hat', 'kick', 'noise',
-         'piano', 'rim', 'shake', 'snare', 'synth','tom', 'voc']
-classes_ranked=[c+"_rank" for c in classes]
+classes=comv.classes
+classes_ranked=comv.classes_ranked
 cDict={v:i for i,v in enumerate(classes)}
 
 #setup CNN
 # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 device="cpu"
-s=torch.load("feature_extraction/models/model-4-18.states")
+s=torch.load("./feature_extraction/models/model-4-19.states")
 cnn = CNN_utils.CNN_net()
 cnn.to(device)
 cnn.load_state_dict(s["model_state_dict"])
@@ -73,15 +78,21 @@ def rank_score():
     ranks=1+len(classes_ranked)-ss.rankdata(o_norm) 
     rank_dict=dict(zip(classes_ranked,ranks))
     df=pd.concat([pd.DataFrame.from_dict([rank_dict]),pd.DataFrame.from_dict([score_dict]),hp.paramToDF(params)],axis=1)    
-    x=df.to_string(header=False,
-                  index=False,
-                  index_names=False).split('\n')
-    vals = [','.join(ele.split()) for ele in x]
     
-    return vals
+    return df
+
+#write once with the header, no headers afterwards
+df=rank_score()
+df.to_csv("csvs/%s.csv"%(dump_file,), index=None, sep=',', mode='a')
 
 
-for i in range(50000):
-    vals=rank_score()
-    with open ("csvs/test2.txt","a") as t:
-        t.write(vals[0]+"\n")
+
+num_iter=5000
+dump_iter=int(num_iter/20)+1 #dump csv every dump_iter iteration
+for i in range(1,num_iter+1):
+    df=pd.concat([df,rank_score()])  
+    if i%dump_iter==0:
+        df.to_csv("csvs/%s.csv"%(dump_file,),header=None, index=None, sep=',', mode='a')
+        df=rank_score()
+
+

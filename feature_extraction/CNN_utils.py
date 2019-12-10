@@ -14,7 +14,7 @@ class CNN_net(torch.nn.Module):
         self.pool1 = torch.nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
         self.conv2 = nn.Conv2d(4, 8, kernel_size=5)
         self.fc1 = nn.Linear(8*60*60, 128)
-        self.fc3 = torch.nn.Linear(128, 12)
+        self.fc3 = torch.nn.Linear(128, 9)
         
     def forward(self, x):
 

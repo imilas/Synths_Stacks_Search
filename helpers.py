@@ -7,7 +7,7 @@ import pandas as pd
 from pippi import dsp, fx
 import scipy
 import param_generation as pg
-
+        
 sr=44100
 
 def specShow(sig):
@@ -105,36 +105,14 @@ def stackMaker(n,l=1,c=1):
     for i in range(n): 
         p=pg.RandomParams()
         s=pg.Synth(p)
-        out.dub(s.buff,p.start)
+        out.dub(s.buff,p.getStart())
         params.append(p)
     out=fx.norm(out,1)
     return out,params
 
-#convert params in a df row to a params object
-# def rToParams(r,n=0):
-#     pset=pg.RandomParams()
-#     pset.oscType=int(round(r["oscType_%d"%(n,)]))
-#     pset.isNoise=int(round(r["isNoise_%d"%(n,)]))
-#     pset.A=r["A_%d"%(n,)]
-#     pset.D=r["D_%d"%(n,)]
-#     pset.S=r["S_%d"%(n,)]
-#     pset.R=r["R_%d"%(n,)]
-#     #pitches
-#     pset.pitch_0=r["pitch_0_%d"%(n,)]
-#     pset.pitch_1=r["pitch_1_%d"%(n,)]
-#     pset.pitch_2=r["pitch_2_%d"%(n,)]
-#     pset.pitch_3=r["pitch_3_%d"%(n,)]
-#     #######
-#     pset.amplitude=r["amplitude_%d"%(n,)]
-#     pset.bpCutLow,pset.bpCutHigh=r["bpCutLow_%d"%(n,)],r["bpCutHigh_%d"%(n,)]
-#     pset.bpOrder=int(round(r["bpOrder_%d"%(n,)]))
-#     pset.length=r["length_%d"%(n,)]
-#     pset.start=r["start_%d"%(n,)]
-
-#     return pset
-#convert params ina  row to a sound and play it
 
 def rToParams(r,n=0):
+    r=r.astype(int)
     pset=pg.RandomParams()
     pset.oscType=int(round(r["oscType_%d"%(n,)]))
     pset.isNoise=int(round(r["isNoise_%d"%(n,)]))
@@ -143,16 +121,16 @@ def rToParams(r,n=0):
     pset.S=r["S_%d"%(n,)]
     pset.R=r["R_%d"%(n,)]
     #pitches
-    pset.pitch_0=r["pitch_0_%d"%(n,)]
-    pset.pitch_1=r["pitch_1_%d"%(n,)]
-    pset.pitch_2=r["pitch_2_%d"%(n,)]
-    pset.pitch_3=r["pitch_3_%d"%(n,)]
+    pset.pitch_0=int(r["pitch_0_%d"%(n,)])
+    pset.pitch_1=int(r["pitch_1_%d"%(n,)])
+    pset.pitch_2=int(r["pitch_2_%d"%(n,)])
+    pset.pitch_3=int(r["pitch_3_%d"%(n,)])
     #######
     pset.amplitude=r["amplitude_%d"%(n,)]
     pset.bpCutLow,pset.bpCutHigh=r["bpCutLow_%d"%(n,)],r["bpCutHigh_%d"%(n,)]
     pset.bpOrder=int(round(r["bpOrder_%d"%(n,)]))
-    pset.length=r["length_%d"%(n,)]
     pset.start=r["start_%d"%(n,)]
+    pset.length=r["length_%d"%(n,)]
     return pset
 
 #convert pippi outputs to mono audio

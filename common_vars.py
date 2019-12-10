@@ -1,4 +1,8 @@
 import numpy as np
+classes=['clap', 'guitar', 'hat', 'kick', 'piano', 'rim', 'shake', 'snare', 'synth',]
+classes_ranked=[c+"_rank" for c in classes]
+
+
 C0=440*2**(-1*9/12)*2**(-1*4) 
 sr=44100
 freqSpacing=50

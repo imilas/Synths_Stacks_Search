@@ -7,6 +7,7 @@ from pippi.oscs import Osc
 from pippi import dsp, noise
 from pippi.soundbuffer import SoundBuffer
 from helpers import *
+from random import gauss
 import helpers
 
 C0=440*2**(-1*9/12)*2**(-1*4) #assume A4 is 440hz and based on it calculate our lowest note C0
@@ -22,6 +23,11 @@ p0_pitches=np.arange(0,num_notes,2)
 p1_pitches=np.arange(0,num_notes,4)
 p2_pitches=np.arange(0,num_notes,8)
 p3_pitches=np.arange(0,num_notes,16)
+
+lp0=len(p0_pitches)
+lp1=len(p1_pitches)
+lp2=len(p2_pitches)
+lp3=len(p3_pitches)
 
 # num_cuts=120
 # all_filter_pitches=np.array([C0*2**(x/12) for x in np.arange(0,num_cuts)]) #skipping the first 2 octaves
@@ -58,7 +64,6 @@ class RandomParams():
         self.amplitude=rd.randint(len(amplitudes))
         self.start=rd.randint(start_spacing)
         self.length=rd.randint(start_spacing-self.start)
-
     def getOscType(self):
         return osc_types[self.oscType]
     def getPitches(self):
@@ -71,7 +76,28 @@ class RandomParams():
         return starts[self.length]+min_length
     def getStart(self):
         return lengths[self.start]
-
+    #mutate envelope with chance e and texture with chance t
+    def mutate(self,e=0.75,t=0.75,s=0.8):
+        if rd.rand()<e:
+            self.A=rd.randint(len(a_d_s_r))
+            self.D=rd.randint(len(a_d_s_r))
+            self.S=rd.randint(len(a_d_s_r))
+            self.R=rd.randint(len(a_d_s_r))
+            self.amplitude=rd.randint(len(amplitudes))
+            self.start=rd.randint(start_spacing)
+            self.length=rd.randint(start_spacing-self.start)
+        if rd.rand()<t:
+            x0=(20*int(gauss(0,s))+self.pitch_0)%lp0
+            x1=(10*int(gauss(0,s))+self.pitch_0)%lp1
+            x2=(5*int(gauss(0,s))+self.pitch_0)%lp2
+            x3=(2*int(gauss(0,s))+self.pitch_0)%lp3
+            self.oscType=rd.choice([0,1,2],p=[0.8,0.1,0.1])
+            self.pitch_0=p0_pitches[x0]
+            self.pitch_1=p1_pitches[x1]
+            self.pitch_2=p2_pitches[x2]
+            self.pitch_3=p3_pitches[x3]
+        return [e,t]
+        
 class Synth():
     def __init__(self,params):
         buff=SoundBuffer(channels=1)
@@ -93,7 +119,7 @@ def ensemble(params):
     out = dsp.buffer(length=1,channels=1)
     for p in params:
         s=pg.Synth(p)
-        out.dub(s.buff,p.start)
+        out.dub(s.buff,p.getStart())
     return out
 
 
