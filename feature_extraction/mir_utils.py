@@ -71,7 +71,7 @@ def loadAudioArrays(load=True,save=True,path="../dk_data/"):
                         file=open("audio_dict.dill","wb")
                         dill.dump(f,file)
                 return f
-
+#old way of loading, should get rid of it eventually
 def audioFrames(load=True,save=True,path="../dk_data/"):
         if load==True:
                 try:
