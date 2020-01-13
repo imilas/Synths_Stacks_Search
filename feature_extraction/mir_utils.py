@@ -15,10 +15,10 @@ import librosa, librosa.display
 from multiprocessing import Pool
 sr=41000
 
+audio_path="./dk_data"
 #load a sample, if given path, load it,
 #if no path but given type, randomly pick one of the type
 #else randomly pick type and load one of the type
-samples="dk_data"
 def loadSample(path="",soundType="",sr=41000):
         if path:
                 file=path
@@ -38,8 +38,8 @@ def loadSample(path="",soundType="",sr=41000):
 #load all samples into a dictionary of arrays
 #can load by opening the pickled dictionary or fresh load if added new sounds
 
-def loadAudioArrays(load=True,save=True,path="../dk_data/"):
-        if load==True:
+def loadAudioArrays(loadCache=True,save=True,path=audio_path):
+        if loadCache==True:
                 try:
                         file=open("audio_dict.dill","rb")
                         f=dill.load(file)
@@ -72,8 +72,8 @@ def loadAudioArrays(load=True,save=True,path="../dk_data/"):
                         dill.dump(f,file)
                 return f
 #old way of loading, should get rid of it eventually
-def audioFrames(load=True,save=True,path="../dk_data/"):
-        if load==True:
+def audioFrames(loadCache=True,save=True,path=audio_path):
+        if loadCache==True:
                 try:
                         file=open("audio_frame.dill","rb")
                         f=dill.load(file)
