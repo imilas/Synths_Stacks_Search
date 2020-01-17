@@ -11,7 +11,7 @@ from random import gauss
 import helpers
 
 C0=440*2**(-1*9/12)*2**(-1*4) #assume A4 is 440hz and based on it calculate our lowest note C0
-sr=44100
+sr=48000
 
 osc_types=["sine","square","saw"]
 a_d_s_r=np.arange(0,4)
