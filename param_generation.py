@@ -38,7 +38,7 @@ num_osc_pitches=np.arange(0,4) #hard set to 4 for now
 amplitudes=np.array([0.3,0.5,0.8,1])
 filter_orders=np.array([2,8,16])
 
-squeeze_factor=10 #biasing starts towards 0
+squeeze_factor=10 #biasing start time towards 0
 max_start=0.95 #latest start time of a sound, slightly below 1
 min_length=(1-max_start)**((1/squeeze_factor))  #based on max_start, what should be min_length so that it adds up to 1?
 start_spacing=10

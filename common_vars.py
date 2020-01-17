@@ -1,10 +1,11 @@
 import numpy as np
-classes=['clap', 'guitar', 'hat', 'kick', 'piano', 'rim', 'shake', 'snare', 'synth',]
+# classes=['clap', 'guitar', 'hat', 'kick', 'piano', 'rim', 'shake', 'snare', 'synth',]
+classes=['clap', 'hat', 'kick', 'snare', 'stacks'] 
 classes_ranked=[c+"_rank" for c in classes]
 
 
 C0=440*2**(-1*9/12)*2**(-1*4) 
-sr=44100
+sr=48000
 freqSpacing=50
 cutSpacing=50
 lengthSpacing=10

@@ -13,7 +13,7 @@ import time
 import os
 import librosa, librosa.display
 from multiprocessing import Pool
-sr=41000
+sr=48000
 
 audio_path="./dk_data"
 #load a sample, if given path, load it,
@@ -38,7 +38,7 @@ def loadSample(path="",soundType="",sr=41000):
 #load all samples into a dictionary of arrays
 #can load by opening the pickled dictionary or fresh load if added new sounds
 
-def loadAudioArrays(loadCache=True,save=True,path=audio_path):
+def loadAudioArrays(loadCache=True,save=True,path=audio_path,sr=48000):
         if loadCache==True:
                 try:
                         file=open("audio_dict.dill","rb")
@@ -71,8 +71,9 @@ def loadAudioArrays(loadCache=True,save=True,path=audio_path):
                         file=open("audio_dict.dill","wb")
                         dill.dump(f,file)
                 return f
+            
 #old way of loading, should get rid of it eventually
-def audioFrames(loadCache=True,save=True,path=audio_path):
+def audioFrames(loadCache=True,save=True,path=audio_path,sr=48000):
         if loadCache==True:
                 try:
                         file=open("audio_frame.dill","rb")
@@ -87,7 +88,7 @@ def audioFrames(loadCache=True,save=True,path=audio_path):
                         for file in files: 
                                 filepath = subdir + os.sep + file
                                 try:
-                                        y, sr = librosa.load(filepath,sr=41000)
+                                        y, sr = librosa.load(filepath,sr=sr)
                                         label=subdir.split("/")[-1]
                                         df=df.append({"label":label,"path":filepath,"audio":y},ignore_index=True)
                                 except:

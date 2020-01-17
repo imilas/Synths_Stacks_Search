@@ -8,8 +8,8 @@ from pippi import dsp, fx
 import scipy
 import param_generation as pg
         
-sr=44100
-
+from common_vars import sr
+import string
 def specShow(sig):
     plt.figure(figsize=(8, 5))
     # multiframe spectrogram
@@ -136,3 +136,22 @@ def rToParams(r,n=0):
 #convert pippi outputs to mono audio
 def memToAud(out):
     return np.squeeze(np.asarray(out.frames))
+
+# converting audio to images
+def cutAudio(x,num_samples=sr):
+    xt,i=lib.effects.trim(x, top_db=50)
+    nTrimmed=len(x)-len(xt)
+    xt=xt[0:num_samples]
+    xt=lib.util.normalize(xt)
+    new_x =np.pad(xt,(0,num_samples-xt.shape[0]),'constant')
+    return new_x,nTrimmed
+
+def audToImage(x,num_bins=100):
+    D=librosa.stft(x,n_fft=num_bins**2,win_length=num_bins**2,hop_length=int(num_bins*4)+1)
+    S = librosa.feature.melspectrogram(S=D, sr=sr, n_mels=num_bins)
+    S_dB = librosa.power_to_db(np.abs(S))
+    return S_dB
+
+#random string generation
+def string_generator(size=4, chars=string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))
