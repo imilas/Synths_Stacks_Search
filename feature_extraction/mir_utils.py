@@ -19,7 +19,7 @@ audio_path="./dk_data"
 #load a sample, if given path, load it,
 #if no path but given type, randomly pick one of the type
 #else randomly pick type and load one of the type
-def loadSample(path="",soundType="",sr=41000):
+def loadSample(path="",soundType="",sr=sr):
         if path:
                 file=path
                 y, sr = librosa.load(path,sr)
@@ -34,11 +34,36 @@ def loadSample(path="",soundType="",sr=41000):
                 y, sr = librosa.load(path+file,sr)               
         return y,sr,file,path
 
+def audioFrames(loadCache=True,save=True,path=audio_path,sr=48000):
+        if loadCache==True:
+                try:
+                        file=open("audio_frames.dill","rb")
+                        f=dill.load(file)
+                        return f
+                except:
+                        print("nothing to load")  
+        else:   
+                df=pd.DataFrame(columns=["label","path","audio"])
+                for subdir, dirs, files in os.walk(path):
+                        print("loading  " + subdir) 
+                        for file in files: 
+                                filepath = subdir + os.sep + file
+                                try:
+                                        y, sr = librosa.load(filepath,sr=sr)
+                                        label=subdir.split("/")[-1]
+                                        df=df.append({"label":label,"path":filepath,"audio":y},ignore_index=True)
+                                except:
+                                        continue
+                if(save):        
+                        file=open("audio_frames.dill","wb")
+                        dill.dump(df,file)
+                return df
 
 #load all samples into a dictionary of arrays
 #can load by opening the pickled dictionary or fresh load if added new sounds
 
-def loadAudioArrays(loadCache=True,save=True,path=audio_path,sr=48000):
+#old way of loading, should get rid of it eventually
+def loadAudioArrays(loadCache=True,save=True,path=audio_path,sr=sr):
         if loadCache==True:
                 try:
                         file=open("audio_dict.dill","rb")
@@ -72,32 +97,6 @@ def loadAudioArrays(loadCache=True,save=True,path=audio_path,sr=48000):
                         dill.dump(f,file)
                 return f
             
-#old way of loading, should get rid of it eventually
-def audioFrames(loadCache=True,save=True,path=audio_path,sr=48000):
-        if loadCache==True:
-                try:
-                        file=open("audio_frame.dill","rb")
-                        f=dill.load(file)
-                        return f
-                except:
-                        print("nothing to load")  
-        else:   
-                df=pd.DataFrame(columns=["label","path","audio"])
-                for subdir, dirs, files in os.walk(path):
-                        print("loading\n\n\n" + subdir) 
-                        for file in files: 
-                                filepath = subdir + os.sep + file
-                                try:
-                                        y, sr = librosa.load(filepath,sr=sr)
-                                        label=subdir.split("/")[-1]
-                                        df=df.append({"label":label,"path":filepath,"audio":y},ignore_index=True)
-                                except:
-                                        continue
-                if(save):        
-                        file=open("audio_frame.dill","wb")
-                        dill.dump(df,file)
-                return df
-
 
 #load a n-sized subset of samples longer than dur
 def loadAudioSubset(n,dur=1000):
