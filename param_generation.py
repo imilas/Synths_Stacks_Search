@@ -113,6 +113,9 @@ class Synth():
         bpfilter=params.getBandPass()
         buff.frames = helpers.butter_bandpass_filter(buff.frames,bpfilter[0],bpfilter[1], 
                                                      sr, order=bpfilter[2])
+        #a high pass 
+        buff.frames = helpers.butter_bandpass_filter(buff.frames,80,15000, 
+                                                     sr, order=8)
         self.buff=buff
         
 def ensemble(params):

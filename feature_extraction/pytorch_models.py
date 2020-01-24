@@ -16,9 +16,9 @@ import torchaudio
 import torchvision as tv
 
 spec=torchaudio.functional.spectrogram
-SR=48000
+SR=44100
 
-def env_Model(D_in=21,H1=4,H2=2,H3=2,H4=10,H5=10,device="cpu"):
+def env_Model(D_in=50,H1=4,H2=2,H3=2,H4=10,H5=10,device="cpu"):
         D_in,D_out =D_in,2
         
         model_env = torch.nn.Sequential(
@@ -26,16 +26,13 @@ def env_Model(D_in=21,H1=4,H2=2,H3=2,H4=10,H5=10,device="cpu"):
         torch.nn.PReLU(),
         torch.nn.Linear(H1,H2),
         torch.nn.PReLU(),
-        torch.nn.Linear(H2,H3),
-        torch.nn.PReLU(),
-        torch.nn.Linear(H3,H4),
-        torch.nn.PReLU(),
-        torch.nn.Linear(H4, D_out),
+        torch.nn.Linear(H2, D_out),
         torch.nn.Softmax())
+        
         model_env.to(device)
         return model_env
 
-def freq_model(H1=4,H2=2,H3=2,D_out=2):
+def freq_model(H1=4,H2=2,H3=2,D_out=2,device="cpu"):
     BATCH_SIZE, D_in,=2,50
 
 
@@ -52,7 +49,7 @@ def freq_model(H1=4,H2=2,H3=2,D_out=2):
     return freq_model
 
 
-def getFCSpecModel(D_in=400,H1=4,H2=2,H3=2,H4=10,H5=10,D_out=2):
+def getFCSpecModel(D_in=400,H1=200,H2=50,H3=25,H4=10,H5=10,D_out=2):
         model_pitch = torch.nn.Sequential(
         torch.nn.Linear(D_in, H1),
         torch.nn.PReLU(),
@@ -60,27 +57,27 @@ def getFCSpecModel(D_in=400,H1=4,H2=2,H3=2,H4=10,H5=10,D_out=2):
         torch.nn.PReLU(),
         torch.nn.Linear(H2,H3),
         torch.nn.PReLU(),
-        torch.nn.Linear(H3, D_out),
+        torch.nn.Linear(H3, 2),
         torch.nn.Softmax())
-        
         return model_pitch
-
+    
 class CNN_dvn(nn.Module):
     def __init__(self):
         super(CNN_dvn, self).__init__()
+#         self.adapt = nn.AdaptiveMaxPool2d((20,20))
         self.layer1 = nn.Sequential(
-            nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(1, 4, kernel_size=(3,3), stride=1, padding=(1,1)),
             nn.ReLU(),
-#             nn.MaxPool2d(kernel_size=2, stride=2)
         )
         self.layer2 = nn.Sequential(
-            nn.Conv2d(32, 64, kernel_size=5, stride=1, padding=2),
+            nn.Conv2d(4, 8, kernel_size=(5,5), stride=1, padding=(2,2)),
             nn.ReLU(),
 #             nn.MaxPool2d(kernel_size=2, stride=2)
         )
         self.drop_out = nn.Dropout()
-        self.fc1 = nn.Linear(20 * 20 * 64, 100)
-        self.fc2 = nn.Linear(100, 2)
+        self.fc1 = nn.Linear(20 * 20 * 8, 100)
+        self.fc2 = nn.Linear(100, 20)
+        self.fc3 = nn.Linear(20, 2)
         self.lsm=torch.nn.Softmax()
         
     def forward(self, x):
@@ -90,6 +87,31 @@ class CNN_dvn(nn.Module):
         out = self.drop_out(out)
         out = self.fc1(out)
         out = self.fc2(out)
+        out = self.fc3(out)
+        out=self.lsm(out)
+        return out
+    
+class CNNLSTM_dvn(nn.Module):
+    def __init__(self):
+        super(CNNLSTM_dvn, self).__init__()
+#         self.adapt = nn.AdaptiveMaxPool2d((20,20))
+        self.layer1 = nn.Sequential(
+            nn.Conv2d(1, 2, kernel_size=(7,3), stride=1, padding=(3,1)),
+            nn.ReLU(),
+        )
+        self.drop_out = nn.Dropout()
+        self.l1 = nn.LSTMCell(20 * 20 * 2, 20)
+        self.fc3 = nn.Linear(20, 2)
+        self.lsm=torch.nn.Softmax()
+        
+    def forward(self, x):
+        out = self.layer1(x)
+#         out = self.layer2(out)
+        out = out.reshape(out.size(0), -1)
+        out = self.drop_out(out)
+        out,_ = self.l1(out)
+#         out = self.fc2(out)
+        out = self.fc3(out)
         out=self.lsm(out)
         return out
     
@@ -142,19 +164,17 @@ class freqTrans(object):
         freq[torch.isnan(freq)]=0
         return {"feats":freq.detach(),"label":label}
     
-    
-    
-class pitchTrans(object):
+class specTrans(object):
     def __init__(self,num_mels=50,SR=SR):
         self.num_mels=num_mels
         self.ampP=torchaudio.transforms.AmplitudeToDB(stype='power',top_db=40)
-        self.melP=torchaudio.transforms.MelScale(n_mels=self.num_mels, sample_rate=SR, f_min=0.0, f_max=15000.0, n_stft=None)
+        self.melP=torchaudio.transforms.MelScale(n_mels=self.num_mels, sample_rate=SR, f_min=30.0, f_max=15000.0, n_stft=None)
         
     def call(self, sample):
         wf,label=sample["signal"],sample["label"]
         wf=wf.reshape(-1,len(wf))
         sample_length=SR
-        wf=wf[0:SR]
+
         num_bins=wf[0].shape[0]
         win_length=SR//17
         hop_step=SR//19
@@ -162,12 +182,9 @@ class pitchTrans(object):
         s=spec(wf, 0, window, num_bins, hop_step, win_length,2,normalized=False)
         s=self.melP(s)
         s=self.ampP(s)
-#         s=s+(-1*s.min())
         s=s/s.abs().max()
         freq=s
-#         print(s.shape)
         return {"feats":freq.detach(),"label":label}
-    
 
 class envTrans(object):
 
@@ -175,7 +192,7 @@ class envTrans(object):
         self.env_size=20
         self.num_mels=num_mels
         self.amp=torchaudio.transforms.AmplitudeToDB(stype='power', top_db=60)
-        self.melEnv=torchaudio.transforms.MelScale(n_mels=2*self.num_mels, sample_rate=SR, f_min=0.0, f_max=None, n_stft=None)
+        self.melEnv=torchaudio.transforms.MelScale(n_mels=2*self.num_mels, sample_rate=SR, f_min=30.0, f_max=None, n_stft=None)
     def call(self, sample):
         wf,label=sample["signal"],sample["label"]
         wf=wf[0:SR]

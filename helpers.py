@@ -8,7 +8,8 @@ from pippi import dsp, fx
 import scipy
 import param_generation as pg
         
-from common_vars import sr
+from common_vars import SR
+sr=SR
 import string
 def specShow(sig):
     plt.figure(figsize=(8, 5))
