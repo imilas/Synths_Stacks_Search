@@ -31,6 +31,44 @@ def env_Model(D_in=50,H1=4,H2=2,H3=2,H4=10,H5=10,device="cpu"):
         
         model_env.to(device)
         return model_env
+    
+class env_LSTM(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+        self.model = nn.ModuleDict({
+            'lstm': nn.LSTM(
+                input_size=x_features,    
+                hidden_size=hidden_size,  
+            ),
+            'linear': nn.Linear(
+                in_features=hidden_size,
+                out_features=1)
+        })
+
+    def forward(self, x):
+
+        # From [batches, seqs, seq len, features]
+        # to [seq len, batch data, features]
+        x = x.view(x_seq_len, -1, x_features)
+        # Data is fed to the LSTM
+        out, _ = self.model['lstm'](x)
+        print(f'lstm output={out.size()}')
+
+        # From [seq len, batch, num_directions * hidden_size]
+        # to [batches, seqs, seq_len,prediction]
+        out = out.view(x_batches, x_seqs, x_seq_len, -1)
+        print(f'transformed output={out.size()}')
+
+        # Data is fed to the Linear layer
+        out = self.model['linear'](out)
+        print(f'linear output={out.size()}')
+
+        # The prediction utilizing the whole sequence is the last one
+        y_pred = out[:, :, -1].unsqueeze(-1)
+        print(f'y_pred={y_pred.size()}')
+
+        return y_pred
 
 def freq_model(H1=4,H2=2,H3=2,D_out=2,device="cpu"):
     BATCH_SIZE, D_in,=2,50
@@ -164,13 +202,43 @@ class freqTrans(object):
         freq[torch.isnan(freq)]=0
         return {"feats":freq.detach(),"label":label}
     
+class envTrans(object):
+
+    def __init__(self,num_mels=50,SR=SR):
+        self.env_size=20
+        self.num_mels=num_mels
+        self.amp=torchaudio.transforms.AmplitudeToDB(stype='power', top_db=60)
+        self.melEnv=torchaudio.transforms.MelScale(n_mels=2*self.num_mels, sample_rate=SR, f_min=0.20, f_max=None, n_stft=None)
+        self.norm= transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    def call(self, sample):
+        wf,label=sample["signal"],sample["label"]
+
+        wf=wf.reshape(-1,len(wf))
+        sample_length=SR
+        num_bins=wf[0].shape[0]
+        win_length=SR//17
+        hop_step=SR//19
+        window=torch.tensor([1]*win_length)
+        s=spec(wf, 100, window, num_bins, hop_step, win_length,2,normalized=False)
+        s=self.melEnv(s)
+        s=self.norm(s)
+        #normalizing
+        env=s.sum(axis=0).sum(axis=0)
+#         env=env/env.abs().max()
+        env[torch.isnan(env)]=0
+
+        num_padding=torch.max(torch.tensor([self.env_size+1-env.shape[0],0]))
+        env_vec=torch.cat([env.detach(),torch.zeros(num_padding)],dim=0)
+        return {"feats":env_vec.detach(),"label":label}
+    
 class specTrans(object):
     def __init__(self,num_mels=50,SR=SR):
         self.num_mels=num_mels
         self.ampP=torchaudio.transforms.AmplitudeToDB(stype='power',top_db=40)
         self.melP=torchaudio.transforms.MelScale(n_mels=self.num_mels, sample_rate=SR, f_min=30.0, f_max=15000.0, n_stft=None)
-        
+        self.norm= transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     def call(self, sample):
+        
         wf,label=sample["signal"],sample["label"]
         wf=wf.reshape(-1,len(wf))
         sample_length=SR
@@ -183,37 +251,8 @@ class specTrans(object):
         s=self.melP(s)
         s=self.ampP(s)
         s=s/s.abs().max()
-        freq=s
+        freq=self.norm(s)
         return {"feats":freq.detach(),"label":label}
-
-class envTrans(object):
-
-    def __init__(self,num_mels=50,SR=SR):
-        self.env_size=20
-        self.num_mels=num_mels
-        self.amp=torchaudio.transforms.AmplitudeToDB(stype='power', top_db=60)
-        self.melEnv=torchaudio.transforms.MelScale(n_mels=2*self.num_mels, sample_rate=SR, f_min=30.0, f_max=None, n_stft=None)
-    def call(self, sample):
-        wf,label=sample["signal"],sample["label"]
-        wf=wf[0:SR]
-        wf=wf.reshape(-1,len(wf))
-        sample_length=SR
-        num_bins=wf[0].shape[0]
-        win_length=SR//17
-        hop_step=SR//19
-        window=torch.tensor([1]*win_length)
-        s=spec(wf, 100, window, num_bins, hop_step, win_length,2,normalized=False)
-        s=self.melEnv(s)
-        
-        #normalizing
-        env=s.sum(axis=0).sum(axis=0)
-        env=env/env.abs().max()
-        env[torch.isnan(env)]=0
-
-        num_padding=torch.max(torch.tensor([self.env_size+1-env.shape[0],0]))
-        env_vec=torch.cat([env.detach(),torch.zeros(num_padding)],dim=0)
-        return {"feats":env_vec.detach(),"label":label}
-    
     
 
 class LSTM(nn.Module):
