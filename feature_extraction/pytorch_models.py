@@ -166,7 +166,28 @@ class CNNLSTM_dvn(nn.Module):
         out = self.fc3(out)
         out=self.lsm(out)
         return out
-    
+
+class CNNLSTM_dvd(nn.Module):
+    def __init__(self,len_out=6):
+        super(CNNLSTM_dvd, self).__init__()
+        self.len_out=len_out
+        self.layer1 = nn.Sequential(
+            nn.Conv2d(1, 2, kernel_size=(7,3), stride=1, padding=(3,1)),
+            nn.ReLU(),
+        )
+        self.drop_out = nn.Dropout()
+        self.l1 = nn.LSTMCell(20 * 20 * 2, 20)
+        self.fc3 = nn.Linear(20, self.len_out)
+        self.lsm=torch.nn.Softmax()
+        
+    def forward(self, x):
+        out = self.layer1(x)
+        out = out.reshape(out.size(0), -1)
+        out = self.drop_out(out)
+        out,_ = self.l1(out)
+        out = self.fc3(out)
+        out=self.lsm(out)
+        return out
 
 class CNN_dvd(nn.Module):
     def __init__(self,len_out=6):
