@@ -5,7 +5,7 @@ classes_ranked=[c+"_rank" for c in classes]
 
 
 C0=440*2**(-1*9/12)*2**(-1*4) 
-SR=44100
+SR=48000
 freqSpacing=50
 cutSpacing=50
 lengthSpacing=10
