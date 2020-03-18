@@ -101,7 +101,7 @@ def env_freq_Model(D_in=50,H1=4,H2=2,H3=2,H4=10,H5=10,D_out=2,device="cpu"):
         model_env.to(device)
         return model_env
 
-def getFCSpecModel(D_in=400,H1=200,H2=50,H3=25,H4=10,H5=10,D_out=2):
+def getFCSpecModel(D_in=400,H1=200,H2=50,H3=25,H4=10,H5=10,D_out=9):
         model_pitch = torch.nn.Sequential(
         torch.nn.Linear(D_in, H1),
         torch.nn.PReLU(),
@@ -295,7 +295,8 @@ class specTrans(object):
         s=self.melP(s)
         s=self.ampP(s)
         s=s/s.abs().max()
-        freq=self.norm(s)
+#         freq=self.norm(s)
+        freq=s
         return {"feats":freq.detach(),"label":label}
     
 class freq_and_env_Trans(object):
