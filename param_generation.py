@@ -32,6 +32,7 @@ lp3=len(p3_pitches)
 # num_cuts=120
 # all_filter_pitches=np.array([C0*2**(x/12) for x in np.arange(0,num_cuts)]) #skipping the first 2 octaves
 bp_pitches=np.arange(0,num_notes,2)
+bp0=len(bp_pitches)
 
 num_osc_pitches=np.arange(0,4) #hard set to 4 for now
 #envelope
@@ -45,6 +46,7 @@ start_spacing=10
 
 starts=np.linspace(0,max_start,start_spacing)**squeeze_factor 
 lengths=np.linspace(0,0.4,start_spacing)**squeeze_factor
+mutation_probabilities=np.linspace(0.1,1,10)
 
 class RandomParams():
     def __init__(self,name="pset"):
@@ -64,6 +66,8 @@ class RandomParams():
         self.amplitude=rd.randint(len(amplitudes))
         self.start=rd.randint(start_spacing)
         self.length=rd.randint(start_spacing-self.start)
+        self.em_prob=rd.choice([0.25,0.5,0.75])
+        self.fm_prob=rd.choice([0.25,0.5,0.75])
     def getOscType(self):
         return osc_types[self.oscType]
     def getPitches(self):
@@ -77,7 +81,7 @@ class RandomParams():
     def getStart(self):
         return lengths[self.start]
     #mutate envelope with chance e and texture with chance t
-    def mutate(self,e=0.75,t=0.75,s=0.8):
+    def mutate(self,e=0.2,t=0.2,s=0.2):
         if rd.rand()<e:
             self.A=rd.randint(len(a_d_s_r))
             self.D=rd.randint(len(a_d_s_r))
@@ -87,16 +91,20 @@ class RandomParams():
             self.start=rd.randint(start_spacing)
             self.length=rd.randint(start_spacing-self.start)
         if rd.rand()<t:
-            x0=(20*int(gauss(0,s))+self.pitch_0)%lp0
-            x1=(10*int(gauss(0,s))+self.pitch_0)%lp1
-            x2=(5*int(gauss(0,s))+self.pitch_0)%lp2
-            x3=(2*int(gauss(0,s))+self.pitch_0)%lp3
-            self.oscType=rd.choice([0,1,2],p=[0.8,0.1,0.1])
+            x0=(int(20*gauss(0,s))+self.pitch_0)%lp0
+            x1=(int(10*gauss(0,s))+self.pitch_1)%lp1
+            x2=(int(5*gauss(0,s))+self.pitch_2)%lp2
+            x3=(int(2*gauss(0,s))+self.pitch_3)%lp3
+#             self.oscType=rd.choice([0,1,2],p=[0.8,0.1,0.1])
             self.pitch_0=p0_pitches[x0]
             self.pitch_1=p1_pitches[x1]
             self.pitch_2=p2_pitches[x2]
             self.pitch_3=p3_pitches[x3]
-        return [e,t]
+            
+            self.bpCutLow=(int(10*gauss(0,s))+self.bpCutLow)%bp0
+            self.bpCutHigh=rd.randint(self.bpCutLow,num_notes)
+            self.bpOrder=rd.randint(len(filter_orders))
+        return self
         
 class Synth():
     def __init__(self,params):
@@ -121,28 +129,6 @@ class Synth():
 def ensemble(params):
     out = dsp.buffer(length=1,channels=1)
     for p in params:
-        s=pg.Synth(p)
+        s=Synth(p)
         out.dub(s.buff,p.getStart())
-    return out
-
-
-# #takes a  row of our scored database and returns a parameter set
-# def rToParams(r,pset,n=0):
-#     pset.oscType=r["oscType_%d"%(n,)]
-#     pset.isNoise=r["isNoise_%d"%(n,)]
-#     pset.A=r["A_%d"%(n,)]
-#     pset.D=r["D_%d"%(n,)]
-#     pset.S=r["S_%d"%(n,)]
-#     pset.R=r["R_%d"%(n,)]
-#     #pitches
-#     pset.amplitude=r["amplitude_%d"%(n,)]
-#     pset.bpCutLow,pset.bpCutHigh=r["bpCutLow_%d"%(n,)],r["bpCutHigh_%d"%(n,)]
-#     pset.bpOrder=r["bpOrder_%d"%(n,)]
-#     pset.length=r["length_%d"%(n,)]
-#     pset.start=r["start_%d"%(n,)]
-#     pset.pitch_0=r["pitch_0_%d"%(n,)]
-#     pset.pitch_1=r["pitch_1_%d"%(n,)]
-#     pset.pitch_2=r["pitch_2_%d"%(n,)]
-#     pset.pitch_3=r["pitch_3_%d"%(n,)]
-    
-#     return pset
+    return helpers.memToAud(out)
