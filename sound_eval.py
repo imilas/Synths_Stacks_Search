@@ -129,14 +129,8 @@ def evalSound(a):
 #     return(a,env_feats,freq_feats,pitch_feats,stack_size,"found")
     return o_e
     
-
+# out,params= stackMaker(stack_size)
 def findDrum(stack_size=1,iteration=0):
-    out,params= stackMaker(stack_size)
+    
     a= memToAud(out)
-    return a,evalSoundSolo(a)
-
-a,sc=findDrum(stack_size,iteration=i)
-
-
-print(sc)
-Audio(a,rate=sr, autoplay=True)
+    return a,evalSound(a)
