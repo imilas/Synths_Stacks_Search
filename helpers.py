@@ -96,8 +96,10 @@ def paramToSound(params):
     out = dsp.buffer(length=1,channels=1)
     for p in params:
         s=pg.Synth(p)
-        out.dub(s.buff,p.start)
+        out.dub(s.buff,p.getStart())
     return fx.norm(out,1)
+    out=fx.norm(out,1)
+    return out,params
 
 def stackMaker(n,l=1,c=1):
     #makes a sample of length l with num channels c
