@@ -134,3 +134,41 @@ def findDrum(stack_size=1,iteration=0):
     
     a= memToAud(out)
     return a,evalSound(a)
+
+
+
+
+
+
+
+
+class drum_classifier():
+    def __init__(self,device="cpu"):
+        self.device=device
+    
+    def transform_input(a):
+            self.transform_input= {"signal":torch.tensor(a,dtype=torch.float),"label":torch.tensor(0)}
+    def getEnvDVN():
+            self.env_feats=env_trans.call(self.transform_input)["feats"].to(self.device)
+            self.outputE=env_model_dvn(self.env_feats)
+            return outputE[0].item()
+    def setAllFeats():
+        self.freq_feats=freq_env_trans.call(self.transform_input)["feats"].to(self.device)
+        self.pitch_feats=fc_spec_trans_dvn.call(self.transform_input)["feats"].to(self.device)
+        self.spec_flat=torch.flatten(self.pitch_feats, start_dim=1)
+
+    def setAllOutputs():
+        self.outputEnvFreq=freq_env_model_dvd(self.freq_feats)
+        self.outputCNNDVD=dvd_cnn(self.pitch_feats.reshape(-1,1,20,20))
+        self.outputCNN= cnn_model_dvn(self.pitch_feats.reshape(-1,1,20,20))
+
+        self.outputFCDVD=dvd_fc(self.spec_flat)
+        self.outputSPECFC=fc_spec_model_dvn(self.spec_flat)
+
+        o_fc_spec,o_cnn_spec=outputSPECFC[0][0].item() ,outputCNN[0][0].item()
+        tote=outputE[0].item()+outputSPECFC[0][0].item()
+
+        gfc=drum_groups[torch.argmax(outputFCDVD).item()]
+        gcnn=drum_groups[torch.argmax(outputCNNDVD).item()]
+        genvfreq=drum_groups[torch.argmax(outputEnvFreq).item()]
+        cat_consensus=drum_groups[torch.argmax(outputFCDVD+outputCNNDVD+outputEnvFreq)]
