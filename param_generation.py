@@ -84,25 +84,33 @@ class RandomParams():
     def mutate(self,e=0.2,t=0.2,s=0.2):
         if rd.rand()<e:
             self.A=rd.randint(len(a_d_s_r))
+        if rd.rand()<e:
             self.D=rd.randint(len(a_d_s_r))
+        if rd.rand()<e:
             self.S=rd.randint(len(a_d_s_r))
+        if rd.rand()<e:
             self.R=rd.randint(len(a_d_s_r))
+        if rd.rand()<e:
             self.amplitude=rd.randint(len(amplitudes))
+        if rd.rand()<e:
             self.start=rd.randint(start_spacing)
             self.length=rd.randint(start_spacing-self.start)
+        x0=(int(20*gauss(0,s))+self.pitch_0)%lp0
+        x1=(int(10*gauss(0,s))+self.pitch_1)%lp1
+        x2=(int(5*gauss(0,s))+self.pitch_2)%lp2
+        x3=(int(2*gauss(0,s))+self.pitch_3)%lp3
         if rd.rand()<t:
-            x0=(int(20*gauss(0,s))+self.pitch_0)%lp0
-            x1=(int(10*gauss(0,s))+self.pitch_1)%lp1
-            x2=(int(5*gauss(0,s))+self.pitch_2)%lp2
-            x3=(int(2*gauss(0,s))+self.pitch_3)%lp3
-#             self.oscType=rd.choice([0,1,2],p=[0.8,0.1,0.1])
             self.pitch_0=p0_pitches[x0]
+        if rd.rand()<t:
             self.pitch_1=p1_pitches[x1]
+        if rd.rand()<t:
             self.pitch_2=p2_pitches[x2]
+        if rd.rand()<t:
             self.pitch_3=p3_pitches[x3]
-            
+        if rd.rand()<t:
             self.bpCutLow=(int(10*gauss(0,s))+self.bpCutLow)%bp0
             self.bpCutHigh=rd.randint(self.bpCutLow,num_notes)
+        if rd.rand()<t:
             self.bpOrder=rd.randint(len(filter_orders))
         return self
         
