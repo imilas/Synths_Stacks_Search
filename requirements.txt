@@ -76,7 +76,7 @@ pathtools==0.1.2
 patsy==0.5.1
 pexpect==4.7.0
 pickleshare==0.7.5
-Pillow==6.2.0
+Pillow==6.2.2
 -e git+https://github.com/luvsound/pippi.git@b93753cfa232b5a611edd308ce78322d17042928#egg=pippi
 pluggy==0.13.1
 proglog==0.1.9
