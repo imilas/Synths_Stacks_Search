@@ -13,6 +13,9 @@
     conda install -c conda-forge nodejs
     conda install -c creditx gcc-7
     ~~~~  
+- install the following widgets for jupyter-lab:
+  jupyterlab-plotly v4.8.2
+  plotlywidget
 ### Installation
 - install pippi and other requirements:
     ~~~~
