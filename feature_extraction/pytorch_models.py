@@ -373,3 +373,30 @@ class ConvNet(nn.Module):
 #     transforms.ToTensor(), 
 #     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 #     ])
+
+class AE_Linear(nn.Module):
+    def __init__(self,compression_dim=64,decoder_dims=256,**kwargs):
+        super().__init__()
+        self.encoder_hidden_layer = nn.Linear(
+            in_features=kwargs["input_shape"], out_features=256
+        )
+        self.encoder_output_layer = nn.Linear(
+            in_features=256, out_features=compression_dim
+        )
+        self.decoder_hidden_layer = nn.Linear(
+            in_features=compression_dim, out_features=decoder_dims
+        )
+        self.decoder_output_layer = nn.Linear(
+            in_features=decoder_dims, out_features=kwargs["input_shape"]
+        )
+    def forward(self, features):
+        activation = self.encoder_hidden_layer(features)
+        activation = torch.relu(activation)
+        code = self.encoder_output_layer(activation)
+        code = torch.relu(code)
+        self.encoding=code
+        activation = self.decoder_hidden_layer(code)
+        activation = torch.relu(activation)
+        activation = self.decoder_output_layer(activation)
+        reconstructed = torch.relu(activation)
+        return reconstructed
