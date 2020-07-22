@@ -257,9 +257,9 @@ _distribution_colors = {
         UniformDistribution: Blues[-1],
         LogUniformDistribution: Blues[-1],
         DiscreteUniformDistribution: Blues[-1],
-        IntUniformDistribution: Blues[-2],
-        IntLogUniformDistribution: Blues[-2],
-        CategoricalDistribution: Blues[-4],}
+        IntUniformDistribution: Blues[-1],
+        IntLogUniformDistribution: Blues[-1],
+        CategoricalDistribution: Blues[-1],}
 
 logger = get_logger(__name__)
 
@@ -328,3 +328,52 @@ def _make_hovertext(param_name: str, importance: float, study: Study) -> str:
     return "{} ({}): {}<extra></extra>".format(
         param_name, _get_distribution(param_name, study).__class__.__name__, importance
     )
+
+
+def get_intermediate_plot(study: Study,topx=10,num_trials_threshold=30) -> "go.Figure":
+
+    layout = go.Layout(
+        title="Intermediate Values Plot",
+        xaxis={"title": "Step"},
+        yaxis={"title": "Intermediate Value"},
+
+        
+    )
+    #this value will determine which trials we want
+    df=study.trials_dataframe()
+    v=df.sort_values(by=["value"],ascending=True).reset_index().iloc[topx]["value"]
+
+    target_state = [TrialState.PRUNED, TrialState.COMPLETE, TrialState.RUNNING]
+    trials = [trial for trial in study.trials if (trial.state in target_state) 
+              and (trial.value and trial.value<v) and len(trial.intermediate_values)<num_trials_threshold]
+
+    if len(trials) == 0:
+        _logger.warning("Study instance does not contain trials.")
+        return go.Figure(data=[], layout=layout)
+
+    traces = []
+
+    for i,trial in enumerate(trials):
+        
+        if trial.intermediate_values:
+            sorted_intermediate_values = sorted(trial.intermediate_values.items())
+            trace = go.Scatter(
+                x=tuple((x for x, _ in sorted_intermediate_values)),
+                y=tuple((y for _, y in sorted_intermediate_values)),
+                mode="lines+markers",
+                marker={"maxdisplayed": 10},
+                marker_symbol=i,
+                marker_size=8, 
+                name="Trial{}".format(trial.number),
+            )
+            traces.append(trace)
+
+    if not traces:
+        _logger.warning(
+            "You need to set up the pruning feature to utilize `plot_intermediate_values()`"
+        )
+        return go.Figure(data=[], layout=layout)
+
+    figure = go.Figure(data=traces, layout=layout,)
+
+    return figure
