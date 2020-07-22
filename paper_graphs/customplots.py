@@ -18,6 +18,23 @@ from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import TrialState
 from optuna.trial import FrozenTrial
+
+
+from collections import OrderedDict
+from typing import List
+from typing import Optional
+
+import optuna
+from optuna.distributions import BaseDistribution
+from optuna.distributions import CategoricalDistribution
+from optuna.distributions import DiscreteUniformDistribution
+from optuna.distributions import IntLogUniformDistribution
+from optuna.distributions import IntUniformDistribution
+from optuna.distributions import LogUniformDistribution
+from optuna.distributions import UniformDistribution
+from optuna.importance._base import BaseImportanceEvaluator
+
+
 # study = optuna.create_study(study_name='Study_ALL',sampler=optuna.samplers.TPESampler(), 
 #                             pruner=optuna.pruners.HyperbandPruner(), storage='sqlite:///optuna_median.db',load_if_exists=True)
 def name_shortner(p_name):
@@ -233,3 +250,81 @@ def get_optimization_history_plot(study: Study) -> "go.Figure":
     figure = go.Figure(data=traces, layout=layout,)
 
     return figure
+
+
+Blues = plotly.colors.sequential.ice_r
+_distribution_colors = {
+        UniformDistribution: Blues[-1],
+        LogUniformDistribution: Blues[-1],
+        DiscreteUniformDistribution: Blues[-1],
+        IntUniformDistribution: Blues[-2],
+        IntLogUniformDistribution: Blues[-2],
+        CategoricalDistribution: Blues[-4],}
+
+logger = get_logger(__name__)
+
+
+def plot_param_importances(
+    importance=None,study=None,
+) -> "go.Figure":
+
+
+    layout = go.Layout(
+        title="Hyperparameter Importances",
+        xaxis={"title": "Importance"},
+        yaxis={"title": "Hyperparameter"},
+        showlegend=False,
+    )
+
+    # Importances cannot be evaluated without completed trials.
+    # Return an empty figure for consistency with other visualization functions.
+    trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
+    if len(trials) == 0:
+        logger.warning("Study instance does not contain completed trials.")
+        return go.Figure(data=[], layout=layout)
+
+    importances = importance
+    print(importances)
+    importances = OrderedDict(reversed(list(importances.items())))
+    importance_values = list(importances.values())
+    param_names = list(importances.keys())
+
+    fig = go.Figure(
+        data=[
+            go.Bar(
+                x=importance_values,
+                y=param_names,
+                text=importance_values,
+                texttemplate="%{text:.2f}",
+                textposition="outside",
+                cliponaxis=False,  # Ensure text is not clipped.
+                hovertemplate=[
+                    _make_hovertext(param_name, importance, study)
+                    for param_name, importance in importances.items()
+                ],
+                marker_color=[_get_color(param_name, study) for param_name in param_names],
+                orientation="h",
+            )
+        ],
+        layout=layout,
+    )
+
+    return fig
+
+
+
+def _get_distribution(param_name: str, study: Study) -> BaseDistribution:
+    for trial in study.trials:
+        if param_name in trial.distributions:
+            return trial.distributions[param_name]
+    assert False
+
+
+def _get_color(param_name: str, study: Study) -> str:
+    return _distribution_colors[type(_get_distribution(param_name, study))]
+
+
+def _make_hovertext(param_name: str, importance: float, study: Study) -> str:
+    return "{} ({}): {}<extra></extra>".format(
+        param_name, _get_distribution(param_name, study).__class__.__name__, importance
+    )
