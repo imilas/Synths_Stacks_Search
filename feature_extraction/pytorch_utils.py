@@ -172,3 +172,5 @@ class specTrans(object):
 #         freq=self.norm(s)
         freq[torch.isnan(freq)]=0
         return {"feats":freq.detach(),"label":label,"path":p,"drum_type":drum_type}
+
+    

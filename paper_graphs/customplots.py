@@ -47,7 +47,7 @@ def name_shortner(p_name):
         if "Hidden" in p_name:
             p_name="Hidden"
         if "Learning" in p_name:
-            p_name="Learn Rate"
+            p_name="Learn. Rate"
         
         return p_name
 def get_parallel_coordinate_plot(study=None,coloring="blues",params= None,objective_value="Loss",logLoss=True):
@@ -232,9 +232,9 @@ def get_optimization_history_plot(study: Study) -> "go.Figure":
             x=[t.number for t in trials],
             y=[t.value for t in trials],
             mode="markers",
-            marker_color='rgb(11,11,255,0.1)',
+            marker_color='rgb(11,100,200,0.1)',
             name="Objective Value",
-            marker=dict(size=12,symbol='line-ns',line=dict(color='rgb(110,110,220,1)',width=2))
+            marker=dict(size=12,symbol='line-ns',line=dict(color='rgb(86, 177, 163)',width=2))
           
         ),
                 go.Scatter(x=[t.number for t in trials],y=best_values, name="Best Value",     
@@ -330,7 +330,7 @@ def _make_hovertext(param_name: str, importance: float, study: Study) -> str:
     )
 
 
-def get_intermediate_plot(study: Study,topx=10,num_trials_threshold=30) -> "go.Figure":
+def get_intermediate_plot(study: Study,topx=10,num_trials_threshold=30,color_scale=None) -> "go.Figure":
 
     layout = go.Layout(
         title="Intermediate Values Plot",
@@ -362,8 +362,9 @@ def get_intermediate_plot(study: Study,topx=10,num_trials_threshold=30) -> "go.F
                 y=tuple((y for _, y in sorted_intermediate_values)),
                 mode="lines+markers",
                 marker={"maxdisplayed": 10},
-                marker_symbol=i,
-                marker_size=8, 
+                marker_symbol=i if i<4 else i*2,
+                marker_size=10, 
+                marker_color=color_scale[i],
                 name="Trial{}".format(trial.number),
             )
             traces.append(trace)
