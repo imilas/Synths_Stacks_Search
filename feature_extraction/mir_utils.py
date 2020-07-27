@@ -12,9 +12,9 @@ import time
 import os
 import librosa, librosa.display
 from multiprocessing import Pool
-sr=48000
+sr=44100
 
-audio_path="./dk_data"
+audio_path="./drum_dbs/"
 #load a sample, if given path, load it,
 #if no path but given type, randomly pick one of the type
 #else randomly pick type and load one of the type
@@ -33,10 +33,13 @@ def loadSample(path="",soundType="",sr=sr):
                 y, sr = librosa.load(path+file,sr)               
         return y,sr,file,path
 
-def audioFrames(loadCache=True,save=True,path=audio_path,sr=48000):
+def audioFrames(loadCache=True,save=True,path=audio_path,sr=44100,db_name="dk_data"):
+        path=audio_path+db_name
+        db_name=path+".dill"
+        print(path,db_name)
         if loadCache==True:
                 try:
-                        file=open("audio_frames.dill","rb")
+                        file=open(db_name,"rb")
                         f=dill.load(file)
                         return f
                 except:
@@ -54,7 +57,7 @@ def audioFrames(loadCache=True,save=True,path=audio_path,sr=48000):
                                 except:
                                         continue
                 if(save):        
-                        file=open("audio_frames.dill","wb")
+                        file=open(db_name,"wb")
                         dill.dump(df,file)
                 return df
 
