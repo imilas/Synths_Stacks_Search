@@ -52,8 +52,12 @@ def audioFrames(loadCache=True,save=True,path=audio_path,sr=44100,db_name="dk_da
                                 filepath = subdir + os.sep + file
                                 try:
                                         y, sr = librosa.load(filepath,sr=sr)
-                                        label=subdir.split("/")[-1]
-                                        df=df.append({"label":label,"path":filepath,"audio":y},ignore_index=True)
+                                        
+                                        if y>sr:
+                                            pass
+                                        else:
+                                            label=subdir.split("/")[-1]
+                                            df=df.append({"label":label,"path":filepath,"audio":y},ignore_index=True)
                                 except:
                                         continue
                 if(save):        
