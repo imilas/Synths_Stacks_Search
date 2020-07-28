@@ -33,7 +33,7 @@ def loadSample(path="",soundType="",sr=sr):
                 y, sr = librosa.load(path+file,sr)               
         return y,sr,file,path
 
-def audioFrames(loadCache=True,save=True,path=audio_path,sr=44100,db_name="dk_data"):
+def audioFrames(loadCache=True,save=True,path=audio_path,sr=44100,db_name="dk_data",maxlen=1):
         path=audio_path+db_name
         db_name=path+".dill"
         print(path,db_name)
@@ -52,8 +52,7 @@ def audioFrames(loadCache=True,save=True,path=audio_path,sr=44100,db_name="dk_da
                                 filepath = subdir + os.sep + file
                                 try:
                                         y, sr = librosa.load(filepath,sr=sr)
-                                        
-                                        if y>sr:
+                                        if len(y)>maxlen*sr: #if longer than 1.5 seconds
                                             pass
                                         else:
                                             label=subdir.split("/")[-1]
