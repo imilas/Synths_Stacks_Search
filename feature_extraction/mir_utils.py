@@ -1,3 +1,5 @@
+#used mainly for making a dill file from a database folder
+#when dill file is made it can be loaded easily to make a dataframe of drums
 from collections import defaultdict
 import pickle,dill
 import random
