@@ -400,3 +400,111 @@ class AE_Linear(nn.Module):
         activation = self.decoder_output_layer(activation)
         reconstructed = torch.relu(activation)
         return reconstructed
+
+# auto encoder stuff
+class AE_Conv(nn.Module):
+    def __init__(self,input_shape,compression_dim,dropout_rate=0.5,num_channels=5,eval_mode=False):
+        super(AE_Conv, self).__init__()
+        self.W=input_shape[0]
+        self.H=input_shape[1]
+        self.eval_mode = eval_mode
+        self.dropout = nn.Dropout(dropout_rate)
+        self.Encoder_Conv= nn.Sequential(
+            nn.Conv2d(1, 8, kernel_size=num_channels, stride=1, padding=2),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2))
+        self.encoder_output_layer = nn.Linear(
+            in_features=(self.H//2 * self.W//2) * 8, out_features=compression_dim
+        )
+        self.decoder_hidden_layer = nn.Linear(
+            in_features=compression_dim, out_features=256
+        )
+        self.decoder_output_layer = nn.Linear(
+            in_features=256, out_features=self.W*self.H)
+        
+        
+    def forward(self, features):
+        features=features.reshape([-1,1,self.W,self.H])
+        activation = self.Encoder_Conv(features)
+        activation = self.dropout(torch.relu(activation))
+        activation = activation.reshape(activation.size(0), -1)
+        code = self.encoder_output_layer(activation)
+        code = torch.relu(code)
+        self.encoding=code
+        if self.eval_mode:
+            return code
+        activation = self.decoder_hidden_layer(code)
+        activation = torch.relu(activation)
+        activation = self.decoder_output_layer(activation)
+        reconstructed = torch.relu(activation)
+        return reconstructed
+
+
+class AE_envTrans(object):
+    def __init__(self,num_mels=10,SR=SR):
+        self.env_size=9
+        self.num_mels=num_mels
+        self.amp=torchaudio.transforms.AmplitudeToDB(stype='power', top_db=60)
+        self.melEnv=torchaudio.transforms.MelScale(n_mels=self.num_mels, sample_rate=SR, f_min=10.0, f_max=None, n_stft=None)
+#         self.norm= transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    def __call__(self, sample):
+        wf,label=sample["signal"],sample["label"]
+        
+        wf=wf.reshape(-1,len(wf))
+        sample_length=SR
+        num_bins=wf[0].shape[0]
+        win_length=SR//20
+        hop_step=SR//self.env_size
+        window=torch.tensor([1]*win_length)
+        s=spec(wf, 0, window,win_length, hop_step, win_length,2,normalized=False)
+        s=self.melEnv(s)
+        s=self.amp(s)
+#         s=self.norm(s)
+        #normalizing
+        env=s.sum(axis=0).sum(axis=0)
+        env=env-env.min()
+        env=env/env.max()
+        env[torch.isnan(env)]=0
+
+        num_padding=torch.max(torch.tensor([self.env_size+1-env.shape[0],0]))
+        env_vec=torch.cat([env.detach(),torch.zeros(num_padding)],dim=0)
+        return {"feats":env_vec.detach(),"label":label}
+    
+class AE_specTrans(object):
+    def __init__(self,num_mels=50,SR=SR,time_steps=20):
+        self.num_mels=num_mels
+        self.ampP=torchaudio.transforms.AmplitudeToDB(stype='power',top_db=60)
+        self.melP=torchaudio.transforms.MelScale(n_mels=self.num_mels, sample_rate=SR,n_stft=None)
+#         self.norm= transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        self.hop_step=time_steps-1
+    def __call__(self, sample):
+        
+        wf,label,p,drum_type=sample["signal"],sample["label"],sample["path"],sample["drum_type"]
+        wf=wf.reshape(-1,len(wf))
+        sample_length=SR
+
+        num_bins=wf[0].shape[0]
+        win_length=SR//17
+        hop_step=SR//self.hop_step
+        window=torch.tensor([1]*win_length)
+        s=spec(wf, 0, window, num_bins, hop_step, win_length,2,normalized=False)
+        s=self.melP(s)
+#         s=self.ampP(s)
+        s = s - s.min()
+        s = s/s.abs().max()
+
+        freq=s
+#         freq=self.norm(s)
+        freq[torch.isnan(freq)]=0
+        freq=freq[0]
+        return {"feats":freq.detach(),"label":label,"path":p,"drum_type":drum_type}
+    
+#when i need both spec and env feats
+class spec_and_env(object):
+    def __init__(self,specTrans=None,envTrans=None):
+        self.sT=specTrans
+        self.eT=envTrans
+    def __call__(self, sample):
+            #will get meta data from spec
+            return {"spec_trans_results":self.sT(sample),"env_trans_results":self.eT(sample)["feats"]}
+
