@@ -402,7 +402,7 @@ class AE_Linear(nn.Module):
         return reconstructed
 
 # auto encoder stuff
-class AE_Conv(nn.Module):
+class AE_Conv5x5(nn.Module):
     def __init__(self,input_shape,compression_dim,dropout_rate=0.5,num_channels=5,eval_mode=False):
         super(AE_Conv, self).__init__()
         self.W=input_shape[0]
@@ -439,7 +439,40 @@ class AE_Conv(nn.Module):
         reconstructed = torch.relu(activation)
         return reconstructed
 
+class AE_Conv1x5(nn.Module):
+    def __init__(self,input_shape,compression_dim,dropout_rate,num_channels=5):
+        super(AE_Conv1x5, self).__init__()
+        self.H=input_shape[0]
+        self.W=input_shape[1]
 
+        self.dropout = nn.Dropout(dropout_rate)
+        self.Encoder_Conv= nn.Sequential(
+            nn.Conv2d(1, num_channels, kernel_size=[1,5], stride=1, padding=2),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=[1,2], stride=[1,2]))
+        self.encoder_output_layer = nn.Linear(
+            in_features=(36 * (self.W//2)) * num_channels, out_features=compression_dim
+        )
+        self.decoder_hidden_layer = nn.Linear(
+            in_features=compression_dim, out_features=256
+        )
+        self.decoder_output_layer = nn.Linear(
+            in_features=256, out_features=self.W*self.H)
+        
+    def forward(self, features):
+        features=features.reshape([-1,1,self.W,self.H])
+        activation = self.Encoder_Conv(features)
+        activation = self.dropout(torch.relu(activation))
+        activation = activation.reshape(activation.size(0), -1)
+        code = self.encoder_output_layer(activation)
+        code = torch.relu(code)
+        self.encoding=code
+        activation = self.decoder_hidden_layer(code)
+        activation = self.dropout(torch.relu(activation))
+        activation = self.decoder_output_layer(activation)
+        reconstructed = torch.relu(activation)
+        return reconstructed
+    
 class AE_envTrans(object):
     def __init__(self,num_mels=10,SR=SR):
         self.env_size=9
@@ -508,3 +541,5 @@ class spec_and_env(object):
             #will get meta data from spec
             return {"spec_trans_results":self.sT(sample),"env_trans_results":self.eT(sample)["feats"]}
 
+
+        
