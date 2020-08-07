@@ -438,20 +438,32 @@ class AE_Conv5x5(nn.Module):
         activation = self.decoder_output_layer(activation)
         reconstructed = torch.relu(activation)
         return reconstructed
+#optimized params
+# TIME_STEPS = 20
+# FREQ_BINS = 30
+# l2 = 3.2473701348597023e-06
+# #hyper params
+# latent_size = 16
+# amp_to_power=True
+# num_channels=3
+# spec_dimension=FREQ_BINS*TIME_STEPS
+# learning_rate = 0.0011451089315356296
+# dropout_rate = 0.5
 
-class AE_Conv1x5(nn.Module):
-    def __init__(self,input_shape,compression_dim,dropout_rate,num_channels=5):
-        super(AE_Conv1x5, self).__init__()
+class AE_Conv1x3(nn.Module):
+    def __init__(self,input_shape,compression_dim,dropout_rate,num_channels=5,eval_mode=False):
+        super(AE_Conv1x3, self).__init__()
         self.H=input_shape[0]
         self.W=input_shape[1]
-
+        self.eval_mode=eval_mode
         self.dropout = nn.Dropout(dropout_rate)
         self.Encoder_Conv= nn.Sequential(
-            nn.Conv2d(1, num_channels, kernel_size=[1,5], stride=1, padding=2),
+            nn.Conv2d(1, num_channels, kernel_size=[1,3], stride=1, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=[1,2], stride=[1,2]))
+          nn.MaxPool2d(kernel_size=[1,2], stride=[1,2]))
+  
         self.encoder_output_layer = nn.Linear(
-            in_features=(36 * (self.W//2)) * num_channels, out_features=compression_dim
+            in_features=(33 * (self.W//2)) * num_channels, out_features=compression_dim
         )
         self.decoder_hidden_layer = nn.Linear(
             in_features=compression_dim, out_features=256
@@ -467,12 +479,13 @@ class AE_Conv1x5(nn.Module):
         code = self.encoder_output_layer(activation)
         code = torch.relu(code)
         self.encoding=code
+        if self.eval_mode:
+            return code
         activation = self.decoder_hidden_layer(code)
         activation = self.dropout(torch.relu(activation))
         activation = self.decoder_output_layer(activation)
         reconstructed = torch.relu(activation)
-        return reconstructed
-    
+        return reconstructed    
 class AE_envTrans(object):
     def __init__(self,num_mels=10,SR=SR):
         self.env_size=9
@@ -504,9 +517,10 @@ class AE_envTrans(object):
         return {"feats":env_vec.detach(),"label":label}
     
 class AE_specTrans(object):
-    def __init__(self,num_mels=50,SR=SR,time_steps=20):
+    def __init__(self,num_mels=50,SR=SR,time_steps=20,amp_to_power=False):
+        self.amp_to_power=amp_to_power
         self.num_mels=num_mels
-        self.ampP=torchaudio.transforms.AmplitudeToDB(stype='power',top_db=60)
+        self.ampP=torchaudio.transforms.AmplitudeToDB(stype='power',top_db=10)
         self.melP=torchaudio.transforms.MelScale(n_mels=self.num_mels, sample_rate=SR,n_stft=None)
 #         self.norm= transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
         self.hop_step=time_steps-1
@@ -522,7 +536,8 @@ class AE_specTrans(object):
         window=torch.tensor([1]*win_length)
         s=spec(wf, 0, window, num_bins, hop_step, win_length,2,normalized=False)
         s=self.melP(s)
-#         s=self.ampP(s)
+        if self.amp_to_power:
+            s=self.ampP(s)
         s = s - s.min()
         s = s/s.abs().max()
 
