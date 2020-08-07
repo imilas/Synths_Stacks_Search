@@ -131,5 +131,5 @@ def make_pack(iteration=0):
             wr = csv.writer(fp, dialect='excel')
             wr.writerow(row)
 
-for i in range(1000):
+for i in range(10000):
     make_pack(i)
