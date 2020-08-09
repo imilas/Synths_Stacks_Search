@@ -6,7 +6,7 @@ import pandas as pd
 import torch
 import torchvision
 import matplotlib.pyplot as plt
-import imp
+
 from pathlib import Path
 
 from pippi.soundbuffer import SoundBuffer
@@ -24,11 +24,9 @@ import common_vars as comv
 
 import csv
 import helpers
-imp.reload(helpers)
-imp.reload(comv)
-imp.reload(pg)
+
 from feature_extraction import pytorch_models as tm
-imp.reload(tm)
+
 from helpers import *
 
 from common_vars import SR
@@ -125,7 +123,7 @@ def make_pack(iteration=0):
             pickle.dump(params,pfile,-1)       
         #make row for predictions csv
         row=[root_name,stack_size,dvd_prediction,dvn_prediction,iteration]
-        print(f'{row}\r',end="")
+#         print(f'{row}\r',end="")
         
         with open("model_predictions_r2.csv", "a", newline='') as fp:
             wr = csv.writer(fp, dialect='excel')
