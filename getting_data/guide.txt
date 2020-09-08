@@ -1,0 +1,3 @@
+making data contains a set of scripts for splicing existing audio into smaller chunks for training
+
+getting data contains a set of scripts which download sample packs in zip format and consolidates them into one sample pack based on a set of keywords. These keywords can be easily modified in the scripts
