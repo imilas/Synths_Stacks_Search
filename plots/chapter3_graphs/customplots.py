@@ -35,6 +35,8 @@ from optuna.distributions import UniformDistribution
 from optuna.importance._base import BaseImportanceEvaluator
 
 
+#mine
+import numpy as np
 # study = optuna.create_study(study_name='Study_ALL',sampler=optuna.samplers.TPESampler(), 
 #                             pruner=optuna.pruners.HyperbandPruner(), storage='sqlite:///optuna_median.db',load_if_exists=True)
 def name_shortner(p_name):
@@ -50,7 +52,7 @@ def name_shortner(p_name):
             p_name="Learn. Rate"
         
         return p_name
-def get_parallel_coordinate_plot(study=None,coloring="blues",params= None,objective_value="Loss",logLoss=True):
+def get_parallel_coordinate_plot(study=None,coloring="blues",params= None,objective_value="Loss",log_loss=True,simple_ticks=[]):
 
     layout = go.Layout(title="Parallel Coordinate Plot",)
 
@@ -68,9 +70,9 @@ def get_parallel_coordinate_plot(study=None,coloring="blues",params= None,object
         all_params = set(params)
     sorted_params = sorted(list(all_params))
     
-    if logLoss==True:
+    if log_loss==True:
         for t in trials:
-            t.value=-1*np.log(t.value)
+            t.value=np.log(t.value)
     dims = [
         {
             "label": objective_value,
@@ -101,7 +103,7 @@ def get_parallel_coordinate_plot(study=None,coloring="blues",params= None,object
             dim["tickvals"] = list(range(len(vocab)))
             ticktext=list(sorted(vocab.items(), key=lambda x: x[1]))
             dim["ticktext"] = [x[0] for x in ticktext]
-        if p_name in (["Time Steps", "Latent Size", "Frequency Bins"]):
+        if p_name in simple_ticks:
             dim["tickvals"]= list(set(values))
         dims.append(dim)
     
@@ -128,7 +130,7 @@ def get_parallel_coordinate_plot(study=None,coloring="blues",params= None,object
 
 
 
-def get_slice_plot(study= Study,objective_value="Loss",params= None):
+def get_slice_plot(study= Study,objective_value="Loss",log_loss=False,params= None):
 
     layout = go.Layout(title="Slice Plot",)
 
@@ -172,6 +174,8 @@ def get_slice_plot(study= Study,objective_value="Loss",params= None):
                 figure.update_yaxes(title_text=objective_value, row=1, col=1)
             if _is_log_scale(trials, param):
                 figure.update_xaxes(type="log", row=1, col=i + 1)
+            if log_loss:
+                figure.update_yaxes(type="log")
         if n_params > 3:
             # Ensure that each subplot has a minimum width without relying on autosizing.
             figure.update_layout(width=300 * n_params)
@@ -330,7 +334,7 @@ def _make_hovertext(param_name: str, importance: float, study: Study) -> str:
     )
 
 
-def get_intermediate_plot(study: Study,topx=10,num_trials_threshold=30,color_scale=None) -> "go.Figure":
+def get_intermediate_plot(study: Study,max_experiments=10,max_num_steps=30,color_scale=None) -> "go.Figure":
 
     layout = go.Layout(
         title="Intermediate Values Plot",
@@ -341,11 +345,15 @@ def get_intermediate_plot(study: Study,topx=10,num_trials_threshold=30,color_sca
     )
     #this value will determine which trials we want
     df=study.trials_dataframe()
-    v=df.sort_values(by=["value"],ascending=True).reset_index().iloc[topx]["value"]
 
+    if max_experiments:
+        cut_off = df.sort_values(by=["value"],ascending=True).reset_index().iloc[max_experiments]["value"]
+    else:
+        cut_off = float('inf')
+        
     target_state = [TrialState.PRUNED, TrialState.COMPLETE, TrialState.RUNNING]
     trials = [trial for trial in study.trials if (trial.state in target_state) 
-              and (trial.value and trial.value<v) and len(trial.intermediate_values)<num_trials_threshold]
+              and (trial.value and trial.value<cut_off) and len(trial.intermediate_values)<max_num_steps]
 
     if len(trials) == 0:
         _logger.warning("Study instance does not contain trials.")
