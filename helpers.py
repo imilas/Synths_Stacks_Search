@@ -25,10 +25,10 @@ def specShow(sig):
     except:
         return
     X = lib.stft(sig)
-    Xdb = lib.amplitude_to_db(abs(X))
+#     Xdb = lib.amplitude_to_db(abs(X))
     plt.figure(figsize=(14, 5))
     plt.subplot(1, 2, 1)
-    lib.display.specshow(Xdb, sr=sr, x_axis='time', y_axis='hz')
+    lib.display.specshow(X**0.5, sr=sr, x_axis='time', y_axis='hz')
 
     # single frame spectrogram
     X = scipy.fft(sig)

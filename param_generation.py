@@ -139,4 +139,5 @@ def ensemble(params):
     for p in params:
         s=Synth(p)
         out.dub(s.buff,p.getStart())
+    out=fx.norm(out,1)
     return helpers.memToAud(out)
