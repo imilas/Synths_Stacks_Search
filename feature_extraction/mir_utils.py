@@ -36,7 +36,7 @@ def loadSample(path="",soundType="",sr=sr):
         return y,sr,file,path
 
 def audioFrames(loadCache=True,save=True,path=audio_path,sr=44100,db_name="dk_data",maxlen=1):
-        path=audio_path+db_name
+        path=path+db_name
         db_name=path+".dill"
         print("loading data base from "+path,db_name)
         if loadCache==True:

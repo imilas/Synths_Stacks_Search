@@ -18,7 +18,47 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 spec=torchaudio.functional.spectrogram
 SR=44100
 
+class audioDataset(torch.utils.data.Dataset):
+    def __init__(self,audio_frame,root_dir, task="keep_all",transform=None):
+        self.root_dir=root_dir
+        self.task=task
+        self.audio_frame=audio_frame
+        self.transform = transform
+        self.minLength=SR
+#         self.minLength=SR//4
+        self.frame_pruning()
+    def __len__(self):
+        return len(self.audio_frame)
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+        rows=self.audio_frame.iloc[idx]
 
+        signals,labels=rows["audio"].tolist()[0:SR],rows["label_num"].tolist()
+        signals,labels=torch.tensor(signals),torch.tensor(labels)
+        
+        nz=np.max((self.minLength-signals.shape[0],0))
+        signals=torch.cat([signals[0:self.minLength],torch.zeros(nz)],dim=0)
+
+        sound={"signal":signals,"label":labels,"path":rows["path"],"drum_type":rows["label"]}
+        
+        if self.transform:
+            sound = self.transform(sound)
+
+        return sound
+    
+    def frame_pruning(self):
+        #drum vs not drum classification:
+        if self.task=="dvn":
+            self.audio_frame.loc[self.audio_frame["label"]!="synth_noise","label_num"]=0 
+            self.audio_frame.loc[self.audio_frame["label"]=="synth_noise","label_num"]=1 
+        #drum type classification
+        if self.task=="dvd":
+            self.audio_frame=self.audio_frame.loc[self.audio_frame["label"]!="synth_noise"]
+        if self.task=="keep_all":
+            pass
+        
+        
 def env_Model(D_in=40,H1=10,H2=5,H3=3,H4=2,H5=10,D_out=2,device="cpu"):
         D_in=D_in
         
