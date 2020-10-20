@@ -208,7 +208,7 @@ class CNNLSTM_dvn(nn.Module):
         return out
 
 class CNNLSTM_dvd(nn.Module):
-    def __init__(self,len_out=6):
+    def __init__(self,len_out=5):
         super(CNNLSTM_dvd, self).__init__()
         self.len_out=len_out
         self.layer1 = nn.Sequential(
