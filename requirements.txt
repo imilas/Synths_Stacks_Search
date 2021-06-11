@@ -151,7 +151,7 @@ transformers==3.0.2
 urllib3==1.25.6
 wcwidth==0.1.7
 webencodings==0.5.1
-websockets==8.1
+websockets==9.1
 widgetsnbextension==3.5.1
 yellowbrick==1.1
 zipp==0.6.0
