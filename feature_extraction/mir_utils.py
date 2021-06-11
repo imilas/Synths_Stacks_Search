@@ -62,7 +62,7 @@ def audioFrames(loadCache=True,save=True,path=audio_path,sr=44100,db_name="dk_da
                                 except:
                                         continue
                 if(save):        
-                        file=open(db_name,"wb")
+                        file=open(db_name,"wb+")
                         dill.dump(df,file)
                 return df
 
