@@ -596,5 +596,146 @@ class spec_and_env(object):
             #will get meta data from spec
             return {"spec_trans_results":self.sT(sample),"env_trans_results":self.eT(sample)["feats"]}
 
+# 1D conv signal classifier
+class ConvSig_Classifier_DVN(nn.Module):
+    def __init__(self,embed_only=False,dropout=0.15):
+        super(ConvSig_Classifier_DVN, self).__init__()
+        self.embed_only = embed_only
+        self.dropout = dropout
+        self.l1 = nn.Sequential(
+                nn.Conv1d(1,128,500, stride=2, padding=5),
+                nn.BatchNorm1d(128),
+                nn.ReLU(),
+                nn.Conv1d(128, 128, 250, stride=2, padding=4),
+#                 nn.MaxPool1d(kernel_size=3, stride=1, padding=1),
+                nn.BatchNorm1d(128),
+                nn.ReLU(),
+                nn.Conv1d(128, 256, 100, stride=2, padding=3),
+                nn.BatchNorm1d(256),
+                nn.ReLU(),
+                nn.Conv1d(256, 256, 100, stride=2, padding=2),
+                nn.MaxPool1d(kernel_size=3, stride=2, padding=1),
+                nn.BatchNorm1d(256),
+                nn.ReLU(),
+                nn.Conv1d(256, 128, 80, stride=1, padding=3),
+#                 nn.MaxPool1d(kernel_size=3, stride=2, padding=1),
+                nn.BatchNorm1d(128),
+                nn.ReLU(),
+                nn.Conv1d(128, 128, 40, stride=1, padding=3),
+                nn.MaxPool1d(kernel_size=3, stride=2, padding=1),
+                nn.BatchNorm1d(128),
+                nn.ReLU())
+        self.l2 = nn.Sequential(
+                nn.Linear(128,128),
+                nn.ReLU(),
+                nn.Dropout(self.dropout),
+                nn.Linear(128,128),
+                nn.Dropout(self.dropout),
+                nn.Linear(128,64),
+                nn.ReLU(),
+                nn.Dropout(self.dropout),
+                )
+        self.l3 = nn.Sequential(
+                  nn.Linear(64,32),
+                  nn.ReLU(),
+                  nn.Dropout(self.dropout),
+                  nn.Linear(32,16),
+                  nn.ReLU(),
+                  nn.Linear(16,2),
+                )
 
+    def forward(self, x_sig):
         
+        x_sig = x_sig.float()
+        bs = x_sig.shape[0]
+        x_sig = x_sig.reshape(bs,1,-1).to(device)
+        x1 = self.l1(x_sig)
+        x1 = x1.reshape(bs,-1)
+        x2 = self.l2(x1)
+        x_agg = torch.cat((x2,), dim=1)
+        x_final = self.l3(x_agg)
+        return x_final
+
+    def init_weights(self):
+        initrange = 0.1
+        self.encoder.weight.data.uniform_(-initrange, initrange)
+        self.decoder.bias.data.zero_()
+        self.decoder.weight.data.uniform_(-initrange, initrange)
+        
+class Conv_Spec_DVN(nn.Module):
+    def __init__(self,embed_only=False,dropout=0.025,device=device):
+        super(Conv_Spec_DVN, self).__init__()
+        self.embed_only = embed_only
+        self.dropout = dropout
+        self.device=device
+        self.conv_1d = nn.Sequential(
+                nn.Conv1d(1,128,500, stride=2, padding=5),
+                nn.BatchNorm1d(128),
+                nn.ReLU(),
+                nn.Conv1d(128, 128, 250, stride=2, padding=4),
+                nn.BatchNorm1d(128),
+                nn.ReLU(),
+                nn.Conv1d(128, 256, 100, stride=2, padding=3),
+                nn.BatchNorm1d(256),
+                nn.ReLU(),
+                nn.Conv1d(256, 256, 100, stride=2, padding=2),
+                nn.MaxPool1d(kernel_size=3, stride=2, padding=1),
+                nn.BatchNorm1d(256),
+                nn.ReLU(),
+                nn.Conv1d(256, 128, 80, stride=1, padding=3),
+                nn.BatchNorm1d(128),
+                nn.ReLU(),
+                nn.Conv1d(128, 128, 40, stride=1, padding=3),
+                nn.MaxPool1d(kernel_size=3, stride=2, padding=1),
+                nn.BatchNorm1d(128),
+                nn.ReLU())
+        self.spectrogram_layer = nn.Sequential(
+                nn.Linear(30*9,64),
+                nn.ReLU(),
+                nn.Dropout(self.dropout),
+                nn.Linear(64,32),
+                nn.Dropout(self.dropout),
+                nn.Linear(32,16),
+                nn.ReLU(),
+                nn.Linear(16,16),
+                nn.ReLU(),
+                nn.Dropout(self.dropout),
+                )
+        self.l2 = nn.Sequential(
+                nn.Linear(128,64),
+                nn.ReLU(),
+                nn.Dropout(self.dropout),
+                nn.Linear(64,32),
+                nn.Dropout(self.dropout),
+                nn.Linear(32,16),
+                nn.ReLU(),
+                nn.Dropout(self.dropout),
+                )
+        self.l3 = nn.Sequential(
+                  nn.Linear(16+16,32),
+                  nn.ReLU(),
+                  nn.Dropout(self.dropout),
+                  nn.Linear(32,16),
+                  nn.ReLU(),
+                  nn.Linear(16,2),
+                )
+
+    def forward(self, x_sig,x_spec):
+        x_sig = x_sig.float()
+        bs = x_sig.shape[0]
+        bs_spec = x_spec.shape[0]
+        x_sig = x_sig.reshape(bs,1,-1).to(self.device)
+        x1_1d = self.conv_1d(x_sig)
+        flat_spec = x_spec.reshape([bs_spec,-1])
+        x1_fc = self.spectrogram_layer(flat_spec)
+        x1_1d = x1_1d.reshape(bs,-1)
+        x2 = self.l2(x1_1d)
+        x_agg = torch.cat((x2,x1_fc),dim=1)
+        x_final = self.l3(x_agg)
+        return x_final
+
+    def init_weights(self):
+        initrange = 0.1
+        self.encoder.weight.data.uniform_(-initrange, initrange)
+        self.decoder.bias.data.zero_()
+        self.decoder.weight.data.uniform_(-initrange, initrange)

@@ -113,6 +113,17 @@ def stackMaker(n,l=1,c=1):
     out=fx.norm(out,1)
     return out,params
 
+def StackMaker(n,l=1,c=1):
+    #makes a sample of length l with num channels c
+    out = dsp.buffer(length=l,channels=c)
+    params=[]
+    for i in range(n): 
+        p=pg.RandomParams()
+        s=pg.Synth(p)
+        out.dub(s.buff,p.getStart())
+        params.append(p)
+    out=fx.norm(out,1)
+    return out,params
 
 def rToParams(r,n=0):
     r=r.astype(int)
