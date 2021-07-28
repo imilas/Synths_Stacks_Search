@@ -112,7 +112,37 @@ class RandomParams():
         if rd.rand()<t:
             self.bpOrder=rd.randint(len(filter_orders))
         return self
-        
+class StackParams():
+    def __init__(self,name="pset"):
+        self.oscType=rd.choice([0,1,2],p=[0.8,0.1,0.1])
+        self.isNoise=rd.choice([0,1],p=[0.5,0.5])     
+        self.A=rd.randint(len(a_d_s_r))
+        self.D=rd.randint(len(a_d_s_r))
+        self.S=rd.randint(len(a_d_s_r))
+        self.R=rd.randint(len(a_d_s_r)) 
+        self.pitch_0=rd.choice(p0_pitches)
+        self.pitch_1=rd.choice(p1_pitches)
+        self.pitch_2=rd.choice(p2_pitches)
+        self.pitch_3=rd.choice(p3_pitches) 
+        self.bpCutLow=rd.choice(bp_pitches)
+        self.bpCutHigh=rd.randint(self.bpCutLow,num_notes)
+        self.bpOrder=rd.randint(len(filter_orders))
+        self.amplitude=rd.randint(len(amplitudes))
+        self.start=rd.randint(start_spacing)
+        self.length=rd.randint(start_spacing-self.start)
+    def getOscType(self):
+        return osc_types[self.oscType]
+    def getPitches(self):
+        return all_pitches[self.pitch_0],all_pitches[self.pitch_1],all_pitches[self.pitch_2],all_pitches[self.pitch_3]
+    def getBandPass(self):
+        return all_pitches[self.bpCutLow],all_pitches[self.bpCutHigh],filter_orders[self.bpOrder]
+    def getAmp(self):
+        return amplitudes[self.amplitude]
+    def getLength(self):
+        return starts[self.length]+min_length
+    def getStart(self):
+        return lengths[self.start]
+    
 class Synth():
     def __init__(self,params):
         buff=SoundBuffer(channels=1)
