@@ -112,6 +112,7 @@ class RandomParams():
         if rd.rand()<t:
             self.bpOrder=rd.randint(len(filter_orders))
         return self
+    
 class StackParams():
     def __init__(self,name="pset"):
         self.oscType=rd.choice([0,1,2],p=[0.8,0.1,0.1])
