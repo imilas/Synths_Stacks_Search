@@ -79,6 +79,7 @@ def butter_bandpass_filter(sig, lowcut, highcut, fs, order=5):
             sig=sig.frames
         except:
             pass
+        sig = np.transpose(sig).flatten()
         sig=lib.to_mono(np.transpose(sig)) 
         sos = butter_bandpass(lowcut, highcut, fs, order=order)
         y = sosfilt(sos, sig)

@@ -880,9 +880,21 @@ import pytorch_lightning as pl
 from pytorch_lightning import LightningModule, Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint,LearningRateMonitor
 import math
+import torchaudio
 
-class Transformer_Lightning(LightningModule):
-    def __init__(self,attention_dropout=0.1,d_model=32,heads=8,encoding_layers=4,pool_dim=1,pct_start=0.05,max_lr=1e-4,max_momentum=0.95,epochs = 50):
+
+import torchmetrics
+from torchmetrics.functional import auc
+from torch.nn import functional as F
+from torch import nn
+import optuna
+from optuna.integration import PyTorchLightningPruningCallback
+import pytorch_lightning as pl
+from pytorch_lightning import LightningModule, Trainer
+from pytorch_lightning.callbacks import ModelCheckpoint,LearningRateMonitor
+import torchaudio
+class Transformer_DVN(LightningModule):
+    def __init__(self,attention_dropout=0.3,d_model=120,heads=30,encoding_layers=12,pool_dim=2,pct_start=0.05,max_lr=1e-4,max_momentum=0.95,epochs=50):
         super().__init__()
         dropout=0.2
         self.attention_dropout=attention_dropout
@@ -894,20 +906,7 @@ class Transformer_Lightning(LightningModule):
         self.max_lr = max_lr
         self.max_momentum = max_momentum
         self.epochs = epochs
-        
-        self.conv_encoder = nn.Sequential(
-                    nn.Conv1d(1, self.d_model, kernel_size=10, stride=2, padding=5, bias=False),
-                    nn.BatchNorm1d(self.d_model),
-                    nn.MaxPool1d(kernel_size=3, stride=2, padding=1),
-                    
-                    nn.Conv1d(self.d_model, self.d_model, kernel_size=3, stride=2, padding=5, bias=False),
-                    nn.BatchNorm1d(self.d_model),
-                    nn.MaxPool1d(kernel_size=3, stride=2, padding=1),
-                    
-                    nn.Conv1d(self.d_model, self.d_model, kernel_size=3, stride=2, padding=7, bias=False),
-                    nn.BatchNorm1d(self.d_model),
-                    nn.ReLU(inplace=True),
-                    )
+        self.spectrogram_func = torchaudio.transforms.Spectrogram(n_fft = int(self.d_model*2)-1, hop_length = 200, power = 0.2, normalized = True)
         
         self.pos_encoder = PositionalEncoding(self.d_model, 0.1)
         self.encoder_layer = nn.TransformerEncoderLayer(d_model=self.d_model, nhead=self.heads,
@@ -919,13 +918,13 @@ class Transformer_Lightning(LightningModule):
         
         self.decoder = nn.Sequential(
           nn.Linear(self.d_model*2*self.pool_dim,64),
-          nn.Linear(64,1),
+          nn.Linear(64,32),
+          nn.Linear(32,1),
         )
 #         d["signal"]
     def forward(self, x):
-        x = x.reshape([-1,1,SR//4]).float()
-
-        x1 = self.conv_encoder(x).transpose(2,1).transpose(1,0)
+        x = x.float()
+        x1 = self.spectrogram_func(x).transpose(0,1).transpose(0,2)
         x1 = self.pos_encoder(x1)
         x2 = self.transformer_encoder(x1).transpose(1,0).transpose(2,1)
         x3r = self.adaptiveavgpool(x2)
@@ -937,8 +936,7 @@ class Transformer_Lightning(LightningModule):
     
     def step(self, batch, batch_idx):
         x, y = batch["signal"].float(),batch["major"].float().reshape(-1,1)
-        x = x.reshape([-1,1,SR//4]).float()
-        x1 = self.conv_encoder(x).transpose(2,1).transpose(1,0)
+        x1 = self.spectrogram_func(x).transpose(0,1).transpose(0,2)
         x1 = self.pos_encoder(x1)
         x2 = self.transformer_encoder(x1).transpose(1,0).transpose(2,1)
         x3r = self.adaptiveavgpool(x2)
@@ -948,8 +946,9 @@ class Transformer_Lightning(LightningModule):
         out =  self.decoder(x4)
 #         loss = F.binary_cross_entropy_with_logits(out, y,pos_weight=self.w_pos.to(self.device))
         loss = F.binary_cross_entropy_with_logits(out, y,)
-        auc = torchmetrics.functional.auroc(out,y.int(),num_classes=17,)
-        return loss, {"loss": loss,"auc":auc}
+        accuracy = torchmetrics.functional.accuracy(out,y.int(),num_classes=1)
+        print(accuracy,end="\r")
+        return loss, {"loss": loss,"accuracy":accuracy}
 
     def training_step(self, batch, batch_idx):
         loss, logs = self.step(batch, batch_idx)
@@ -979,6 +978,96 @@ class Transformer_Lightning(LightningModule):
                         'interval':'step',
                         'frequency': 1}
         return [optimizer],[lr_scheduler]
+
+
+class Transformer_DVD(LightningModule):
+    def __init__(self,attention_dropout=0.3,d_model=120,heads=30,encoding_layers=12,pool_dim=1,pct_start=0.05,max_lr=1e-4,max_momentum=0.95,epochs=50):
+        super().__init__()
+        dropout=0.2
+        self.attention_dropout=attention_dropout
+        self.d_model = d_model
+        self.heads = heads
+        self.encoding_layers = encoding_layers
+        self.pool_dim = pool_dim
+        self.pct_start = pct_start
+        self.max_lr = max_lr
+        self.max_momentum = max_momentum
+        self.epochs = epochs
+        self.spectrogram_func = torchaudio.transforms.Spectrogram(n_fft = int(self.d_model*2)-1, hop_length = 200, power = 0.2, normalized = True)
+        
+        self.pos_encoder = PositionalEncoding(self.d_model, 0.1)
+        self.encoder_layer = nn.TransformerEncoderLayer(d_model=self.d_model, nhead=self.heads,
+                                                        dropout = self.attention_dropout,)
+        
+        self.transformer_encoder = nn.TransformerEncoder(self.encoder_layer, num_layers=self.encoding_layers)
+        self.adaptiveavgpool = nn.AdaptiveAvgPool1d(self.pool_dim)
+        self.adaptivemaxpool = nn.AdaptiveMaxPool1d(self.pool_dim)
+        
+        self.decoder = nn.Sequential(
+          nn.Linear(self.d_model*2*self.pool_dim,64),
+          nn.Linear(64,32),
+          nn.Linear(32,16),
+          nn.Linear(16,4),
+        )
+#         d["signal"]
+    def forward(self, x):
+        x = x.float()
+        x1 = self.spectrogram_func(x).transpose(0,1).transpose(0,2)
+        x1 = self.pos_encoder(x1)
+        x2 = self.transformer_encoder(x1).transpose(1,0).transpose(2,1)
+        x3r = self.adaptiveavgpool(x2)
+        x3c = self.adaptivemaxpool(x2)
+        x4 = torch.cat((x3r, x3c), dim=1)
+        x4 = x4.view(x4.size(0), -1)
+        out =  self.decoder(x4)
+        return out
+    
+    def step(self, batch, batch_idx):
+        x, y = batch["signal"].float(),batch["one_hot"]
+        x1 = self.spectrogram_func(x).transpose(0,1).transpose(0,2)
+        x1 = self.pos_encoder(x1)
+        x2 = self.transformer_encoder(x1).transpose(1,0).transpose(2,1)
+        x3r = self.adaptiveavgpool(x2)
+        x3c = self.adaptivemaxpool(x2)
+        x4 = torch.cat((x3r, x3c), dim=1)
+        x4 = x4.view(x4.size(0), -1)
+        out =  self.decoder(x4)
+#         loss = F.binary_cross_entropy_with_logits(out, y,pos_weight=self.w_pos.to(self.device))
+        loss = F.binary_cross_entropy_with_logits(out, y,)
+        auc = torchmetrics.functional.auroc(out,y.int(),num_classes=4,average="micro")
+        accuracy = torchmetrics.functional.accuracy(out,y.int(),num_classes=4,average="macro")
+        print(auc,accuracy,end="\r")
+        return loss, {"loss": loss,"auc":auc,"accuracy":accuracy}
+
+    def training_step(self, batch, batch_idx):
+        loss, logs = self.step(batch, batch_idx)
+
+        
+        self.log_dict({f"train_{k}": v for k, v in logs.items()}, on_step=False, on_epoch=True)
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        loss, logs = self.step(batch, batch_idx)
+        self.log_dict({f"val_{k}": v for k, v in logs.items()}, on_step=False, on_epoch=True)
+        return loss
+    
+    def configure_optimizers(self):
+        optimizer = torch.optim.AdamW(self.parameters(), lr=1e-8)
+        lr_scheduler = {'scheduler': torch.optim.lr_scheduler.OneCycleLR(
+                                        optimizer,
+                                        pct_start = self.pct_start,
+                                        max_lr=self.max_lr,
+                                        steps_per_epoch=int(len(self.train_dataloader())),
+                                        epochs=self.epochs,
+                                        anneal_strategy="cos",
+                                        final_div_factor = 1000,
+                                        max_momentum=self.max_momentum,
+                                    ),
+                        'name': 'learning_rate',
+                        'interval':'step',
+                        'frequency': 1}
+        return [optimizer],[lr_scheduler]
+
 
 class PositionalEncoding(nn.Module):
 
