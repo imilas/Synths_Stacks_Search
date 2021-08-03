@@ -170,3 +170,13 @@ def audToImage(x,num_bins=100):
 #random string generation
 def string_generator(size=4, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
+
+def get_mel_spec(sound):
+    fig, ax = plt.subplots()
+    S = librosa.feature.melspectrogram(y=sound, sr=sr, n_mels=128,
+                                        fmax=20000)
+    S_dB = librosa.power_to_db(S, ref=np.max)
+    img = librosa.display.specshow(S_dB, x_axis='time',
+                             y_axis='mel', sr=sr,
+                             fmax=20000, ax=ax,cmap = "Greys")
+    return img
